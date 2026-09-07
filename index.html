@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pipeline CRM</title>
+  <style>
+    :root { --ink:#17233c; --muted:#68758d; --line:#e6eaf0; --bg:#f5f7fb; --brand:#315efb; --card:#fff; }
+    * { box-sizing:border-box } body { margin:0; font:14px/1.45 Inter, ui-sans-serif, system-ui, sans-serif; color:var(--ink); background:var(--bg) }
+    header { background:#17233c; color:#fff; padding:22px 32px; display:flex; gap:20px; align-items:center; justify-content:space-between }
+    h1 { font-size:20px; margin:0; letter-spacing:-.3px } .sub { opacity:.65; font-size:12px; margin-top:2px }
+    #syncBadge { display:inline-flex; align-items:center; gap:6px; font-size:11px; color:#cdd6ea; margin-top:6px }
+    #syncBadge .dot { width:7px; height:7px; border-radius:50%; background:#5fce8f }
+    #syncBadge.offline .dot { background:#e0a23a }
+    #authGate { position:fixed; inset:0; background:var(--bg); display:grid; place-items:center; z-index:100; padding:20px }
+    #authGate[hidden] { display:none }
+    .auth-card { background:#fff; border:1px solid var(--line); border-radius:14px; padding:32px; width:min(360px, 100%); box-shadow:0 16px 60px #17233c1a }
+    .auth-card h2 { margin:0 0 4px; font-size:19px } .auth-card .sub2 { color:var(--muted); font-size:13px; margin-bottom:20px }
+    .auth-card label { display:grid; gap:5px; color:var(--muted); font-size:12px; margin-bottom:14px }
+    .auth-card input { width:100% } .auth-card button[type=submit] { width:100%; justify-content:center; margin-top:6px }
+    #authError { color:#b42318; font-size:12px; margin:10px 0 0; min-height:15px }
+    .user-badge { display:flex; align-items:center; gap:10px }
+    .user-badge span { font-size:12px; color:#cdd6ea }
+    .user-badge button { padding:7px 11px; font-size:12px }
+    button, .file-label { border:0; border-radius:8px; background:var(--brand); color:#fff; padding:9px 13px; font:inherit; cursor:pointer; display:inline-flex; align-items:center; gap:7px }
+    button.secondary, .file-label.secondary { background:#fff; color:var(--ink); border:1px solid #d7ddea } button.danger { background:#fff0f0; color:#b42318 }
+    main { padding:26px 32px; max-width:1600px; margin:auto }.toolbar { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; align-items:center }
+    input, select, textarea { font:inherit; border:1px solid #d7ddea; border-radius:8px; padding:9px 10px; color:var(--ink); background:white }
+    #search { min-width:250px; flex:1 }.stats { display:grid; grid-template-columns:repeat(5,minmax(135px,1fr)); gap:12px; margin-bottom:20px }
+    .stat { background:var(--card); border:1px solid var(--line); padding:15px; border-radius:10px; cursor:pointer }.stat b { display:block; font-size:23px; margin-top:3px }.stat small { color:var(--muted) }
+    .hint { color:var(--muted); font-size:12px }.board { display:grid; grid-template-columns:repeat(9,minmax(220px,1fr)); gap:14px; overflow-x:auto; align-items:start; padding-bottom:12px }.column { background:#e9edf5; border-radius:11px; min-height:430px; min-width:0; padding:10px; transition:.15s }.column.over { background:#dbe5ff; outline:2px dashed #315efb }.column-head{display:flex;justify-content:space-between;align-items:center;padding:4px 3px 11px;font-weight:700}.count{background:#d7deed;color:#52617b;border-radius:12px;padding:1px 7px;font-size:12px}.lead-list{min-height:365px;min-width:0;display:grid;gap:9px;align-content:start}.lead-card{background:#fff;border-radius:9px;padding:12px;box-shadow:0 1px 2px #192b4a12;cursor:grab;border:1px solid #e3e7ef;min-width:0;overflow-wrap:anywhere}.lead-card:active{cursor:grabbing}.lead-card.dragging{opacity:.45}.card-top{display:flex;justify-content:space-between;align-items:center;gap:9px;margin-bottom:5px;min-width:0}.lead-card h3{font-size:14px;margin:0;color:#203eac;min-width:0;overflow-wrap:anywhere}.lead-card p{margin:3px 0;color:#52617b;font-size:12px}.rep-avatar{width:34px;height:34px;flex:none;border-radius:50%;background:#fbb5c9;color:#452333;display:grid;place-items:center;font-size:13px;font-weight:600;letter-spacing:-.3px;border:0;cursor:pointer;font-family:inherit}.rep-avatar:hover{outline:2px solid #315efb55}.rep-menu{position:fixed;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px #17233c33;padding:6px;min-width:170px;max-height:260px;overflow-y:auto;z-index:80;display:grid;gap:2px}.rep-menu-item{width:100%;text-align:left;background:transparent;color:var(--ink);padding:8px 10px;border-radius:6px;font-size:13px;border:0;cursor:pointer;font:inherit;display:block}.rep-menu-item:hover{background:#eef1f8}.rep-menu-divider{border-top:1px solid var(--line);margin:4px 2px}.assign{background:#315efb;color:#fff;border:0;border-radius:6px;padding:5px 7px;font-size:11px;cursor:pointer}.card-footer{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:11px;padding-top:9px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}.empty-col{color:#7d899e;font-size:12px;text-align:center;padding:24px 6px;border:1px dashed #cbd3e1;border-radius:8px}.empty { text-align:center; padding:52px; color:var(--muted) }
+    dialog { border:0; border-radius:14px; padding:0; width:min(620px, calc(100% - 32px)); box-shadow:0 16px 60px #17233c55 } dialog::backdrop { background:#17233c88 }.modal-head { padding:18px 22px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center }.modal-head h2{margin:0;font-size:18px}.modal-body{padding:20px 22px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.grid label,.comment-box label { display:grid; gap:5px; color:var(--muted); font-size:12px }.grid input,.grid select{width:100%}.modal-actions{padding:15px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:9px}.comments { margin-top:22px; border-top:1px solid var(--line); padding-top:16px }.comment { padding:10px 0; border-bottom:1px solid var(--line) }.comment-head{font-weight:600;margin-bottom:4px}.comment-points{margin:0;padding-left:18px;display:grid;gap:3px}.comment-meta { color:var(--muted); font-size:12px; margin-bottom:3px }.comment-box { margin-top:13px }.comment-box textarea{width:100%; min-height:68px; resize:vertical} .close{background:transparent;color:var(--muted);font-size:20px;padding:2px 7px} #csv{display:none}@media(max-width:700px){header,main{padding-left:16px;padding-right:16px}.stats{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div id="authGate">
+    <form class="auth-card" id="authForm">
+      <h2>Pipeline CRM</h2>
+      <div class="sub2">Sign in with the account your admin created for you.</div>
+      <label>Email<input id="authEmail" type="email" autocomplete="username" required /></label>
+      <label>Password<input id="authPassword" type="password" autocomplete="current-password" required /></label>
+      <button type="submit" id="authSubmit">Sign in</button>
+      <p id="authError"></p>
+    </form>
+  </div>
+  <div id="appRoot" hidden>
+  <header><div><h1>Pipeline CRM</h1><div class="sub">A simple shared-sales workflow</div><div id="syncBadge" class="offline"><span class="dot"></span><span id="syncText">Saved on this device only</span></div></div><button class="secondary" onclick="openNewLead()">+ Add lead</button></header>
+  <main>
+    <div class="toolbar"><input id="search" placeholder="Search name, phone, company, salesperson…" oninput="render()"/><select id="filterStatus" onchange="render()"><option value="">All statuses</option></select><select id="filterOwner" onchange="render()"><option value="">All salespeople</option></select><label class="file-label secondary" for="csv">Import CSV / Excel</label><input id="csv" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" onchange="importCSV(event)"/><button class="secondary" onclick="exportCSV()">Export CSV</button><button class="secondary" onclick="loadDemo()">Load example leads</button></div>
+    <div class="hint" id="importHint">Import a regular or Meta lead CSV or Excel file (.csv, .xlsx, .xls). Name, sales rep, brand, phone, email, and status go on the card; every other answer is saved as a comment.</div>
+    <section class="stats" id="stats"></section><div class="board" id="board"></div><div class="empty" id="empty">No leads yet. Add one or import your CSV to get started.</div>
+  </main>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+    import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyD6d-vHrh9QJmrI_Wemgk88mWzdvahphTM",
+      authDomain: "bidzo-crm-5a6f3.firebaseapp.com",
+      projectId: "bidzo-crm-5a6f3",
+      storageBucket: "bidzo-crm-5a6f3.firebasestorage.app",
+      messagingSenderId: "1001262880296",
+      appId: "1:1001262880296:web:ebde2f5771b127bec2c71d"
+    };
+    window.__dbReadyPromise = (async () => {
+      try {
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const fsdb = getFirestore(app);
+        const leadsCol = collection(fsdb, 'leads');
+        window.__auth = {
+          signIn: (email, password) => signInWithEmailAndPassword(auth, email, password),
+          signOut: () => signOut(auth),
+        };
+        window.__authStatePromise = new Promise(resolve => {
+          let first = true;
+          onAuthStateChanged(auth, user => {
+            if (window.__onAuthChange) window.__onAuthChange(user);
+            if (first) { first = false; resolve(user); }
+          });
+        });
+        return {
+          collection(path) {
+            return {
+              add: (data) => addDoc(leadsCol, data),
+              doc: (id) => ({
+                update: (data) => updateDoc(doc(fsdb, 'leads', id), data),
+                delete: () => deleteDoc(doc(fsdb, 'leads', id)),
+              }),
+              onSnapshot: (next, err) => onSnapshot(leadsCol, snap => next({ docs: snap.docs.map(d => ({ id: d.id, data: () => d.data() })) }), err),
+            };
+          }
+        };
+      } catch (e) {
+        console.error('Firebase init failed', e);
+        return null;
+      }
+    })();
+  </script>
+  <div id="repMenu" class="rep-menu" hidden></div>
+  <dialog id="leadDialog"><form method="dialog" id="leadForm"><div class="modal-head"><h2 id="dialogTitle">Lead details</h2><button class="close" value="cancel" formnovalidate aria-label="Close">×</button></div><div class="modal-body"><div class="grid"><label>Name<input name="name" required /></label><label>Phone<input name="phone" /></label><label>Email<input name="email" type="email" /></label><label>Brand name<input name="company" /></label><label>Salesperson<input name="owner" placeholder="e.g. Priya" /></label><label>Status<select name="status"></select></label></div><div class="comments"><strong>Comments & activity</strong><div id="commentList"></div><div class="comment-box"><label>New comment<textarea id="newComment" placeholder="Add a note, call outcome, or next step…"></textarea></label><button type="button" onclick="addComment()" style="margin-top:8px">Add comment</button></div></div></div><div class="modal-actions"><button class="danger" type="button" id="deleteBtn" onclick="deleteLead()">Delete</button><button class="secondary" value="cancel" formnovalidate>Cancel</button><button type="button" onclick="saveLead()">Save changes</button></div></form></dialog>
+  <script>
+    const STATUSES=['Incoming leads','New leads','P1','P2','Call not answered','Follow up later','Audit booked','Junk','Lost'];
+    let leads=[], activeId=null, db=null, useDb=false;
+    const $=s=>document.querySelector(s), esc=s=>String(s||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])), initials=s=>String(s||'?').trim().split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'?';
+    function saveLocal(){localStorage.setItem('pipeline-crm-leads',JSON.stringify(leads))}
+    function date(v){return v?new Date(v).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'—'}
+    function uid(){return crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random()}
+    function statusOptions(selected){return STATUSES.map(s=>`<option ${s===selected?'selected':''}>${s}</option>`).join('')}
+    function refreshFilters(){let owners=[...new Set(leads.map(l=>l.owner).filter(Boolean))].sort(), old=$('#filterOwner').value, oldStatus=$('#filterStatus').value; $('#filterStatus').innerHTML='<option value="">All statuses</option>'+STATUSES.map(s=>`<option ${s===oldStatus?'selected':''}>${s}</option>`).join(''); $('#filterOwner').innerHTML='<option value="">All salespeople</option>'+owners.map(x=>`<option ${x===old?'selected':''}>${esc(x)}</option>`).join('')}
+    function render(){refreshFilters();let q=$('#search').value.toLowerCase(), st=$('#filterStatus').value, ow=$('#filterOwner').value;let shown=leads.filter(l=>!st||l.status===st).filter(l=>!ow||l.owner===ow).filter(l=>!q||[l.name,l.phone,l.email,l.company,l.owner,l.status].join(' ').toLowerCase().includes(q));$('#stats').innerHTML=STATUSES.map(s=>`<div class="stat" onclick="$('#filterStatus').value='${s}';render()"><small>${s}</small><b>${leads.filter(l=>l.status===s).length}</b></div>`).join('');$('#board').innerHTML=STATUSES.map(s=>{let cards=shown.filter(l=>l.status===s);return `<section class="column" data-status="${s}" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="dropLead(event,'${s}')"><div class="column-head"><span>${s}</span><span class="count">${cards.length}</span></div><div class="lead-list">${cards.length?cards.map(card).join(''):'<div class="empty-col">Drag leads here</div>'}</div></section>`}).join('');$('#empty').style.display=leads.length?'none':'block'}
+    function onLeadsChanged(){render();let dlg=$('#leadDialog');if(dlg.open&&activeId){let l=leads.find(l=>l.id===activeId);if(l)renderComments(l)}}
+    function card(l){let rep=l.owner||'Unassigned', assignment=!l.owner?`<button class="assign" onclick="event.stopPropagation();assignToRep('${l.id}')">Assign to sales rep</button>`:'<span>Click for details</span>';return `<article class="lead-card" draggable="true" ondragstart="dragStart(event,'${l.id}')" ondragend="dragEnd(event)" onclick="openLead('${l.id}')" oncontextmenu="deleteLeadDirect(event,'${l.id}')"><div class="card-top"><h3>${esc(l.name)}</h3><button type="button" class="rep-avatar" onclick="openRepMenu(event,'${l.id}')" title="Sales rep: ${esc(rep)} — click to reassign" aria-label="Sales rep: ${esc(rep)} — click to reassign">${initials(rep)}</button></div><p><strong>Brand:</strong> ${esc(l.company||'—')}</p><p><strong>Phone:</strong> ${esc(l.phone||'—')}</p><p><strong>Email:</strong> ${esc(l.email||'—')}</p><div class="card-footer">${assignment}<span>${l.comments?.length||0} comments</span></div></article>`}
+    function dragStart(e,x){e.dataTransfer.setData('text/plain',x);e.dataTransfer.effectAllowed='move';e.currentTarget.classList.add('dragging')}function dragEnd(e){e.currentTarget.classList.remove('dragging');document.querySelectorAll('.column').forEach(x=>x.classList.remove('over'))}function allowDrop(e){e.preventDefault();e.dataTransfer.dropEffect='move'}function dragEnter(e){e.preventDefault();e.currentTarget.closest('.column').classList.add('over')}function dragLeave(e){if(!e.currentTarget.contains(e.relatedTarget))e.currentTarget.closest('.column').classList.remove('over')}
+    async function dropLead(e,status){e.preventDefault();let x=e.dataTransfer.getData('text/plain'),l=leads.find(l=>l.id===x);e.currentTarget.closest('.column').classList.remove('over');if(l&&l.status!==status){await patchLead(x,{status,updatedAt:new Date().toISOString()});if(!useDb)onLeadsChanged()}}
+    function openNewLead(){activeId=null;$('#dialogTitle').textContent='Add lead';$('#leadForm').reset();$('#leadForm [name=status]').innerHTML=statusOptions(STATUSES[0]);$('#leadForm [name=status]').disabled=true;$('#commentList').innerHTML='';$('#deleteBtn').style.display='none';$('#leadDialog').showModal()}
+    function openLead(x){let l=leads.find(l=>l.id===x);if(!l)return;activeId=x;$('#dialogTitle').textContent='Lead details';for(let k of ['name','phone','email','company','owner'])$('#leadForm [name='+k+']').value=l[k]||'';$('#leadForm [name=status]').innerHTML=statusOptions(l.status);$('#leadForm [name=status]').disabled=false;$('#newComment').value='';$('#deleteBtn').style.display='block';renderComments(l);$('#leadDialog').showModal()}
+    function commentBody(text){let lines=String(text||'').split('\n').map(x=>x.trim()).filter(Boolean);if(lines.length<=1)return esc(text||'');let [head,...rest]=lines;return `<div class="comment-head">${esc(head)}</div><ul class="comment-points">${rest.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`}
+    function renderComments(l){$('#commentList').innerHTML=(l.comments||[]).length?(l.comments||[]).slice().reverse().map(c=>`<div class="comment"><div class="comment-meta">${esc(c.author||'Team')} · ${date(c.at)}</div>${commentBody(c.text)}</div>`).join(''):'<p class="hint">No comments yet.</p>'}
+    async function createLead(data){if(useDb){await db.collection('leads').add(data)}else{leads.unshift({...data,id:uid()});saveLocal()}}
+    async function patchLead(id,data){if(useDb){await db.collection('leads').doc(id).update(data)}else{let l=leads.find(l=>l.id===id);if(l)Object.assign(l,data);saveLocal()}}
+    async function removeLead(id){if(useDb){await db.collection('leads').doc(id).delete()}else{leads=leads.filter(l=>l.id!==id);saveLocal()}}
+    async function saveLead(){let f=new FormData($('#leadForm')), data=Object.fromEntries(f.entries()), now=new Date().toISOString();if(activeId){await patchLead(activeId,{...data,updatedAt:now})}else{data.status=STATUSES[0];await createLead({...data,comments:[],createdAt:now,updatedAt:now})}$('#leadDialog').close();if(!useDb)onLeadsChanged()}
+    async function quickStatus(x,v){await patchLead(x,{status:v,updatedAt:new Date().toISOString()});if(!useDb)onLeadsChanged()}
+    async function assignToRep(x){let l=leads.find(l=>l.id===x),rep=prompt('Assign this lead to a sales rep:',l.owner||'');if(!rep||!rep.trim())return;let patch={owner:rep.trim(),updatedAt:new Date().toISOString()};if(l.status==='Incoming leads')patch.status='New leads';await patchLead(x,patch);if(!useDb)onLeadsChanged()}
+    let repMenuLeadId=null;
+    function openRepMenu(e,x){e.preventDefault();e.stopPropagation();repMenuLeadId=x;let l=leads.find(l=>l.id===x);if(!l)return;let owners=[...new Set(leads.map(l=>l.owner).filter(Boolean))].sort(), menu=$('#repMenu');menu.innerHTML=owners.map(o=>`<button type="button" class="rep-menu-item" data-rep="${esc(o)}">${o===l.owner?'✓ ':''}${esc(o)}</button>`).join('')+(owners.length?'<div class="rep-menu-divider"></div>':'')+`<button type="button" class="rep-menu-item" data-rep="">${!l.owner?'✓ ':''}Unassigned</button><div class="rep-menu-divider"></div><button type="button" class="rep-menu-item" data-new="1">+ New name…</button>`;let rect=e.currentTarget.getBoundingClientRect();menu.style.top=Math.min(rect.bottom+6,window.innerHeight-260)+'px';menu.style.left=Math.min(rect.left,window.innerWidth-190)+'px';menu.hidden=false}
+    async function pickRep(btn){let x=repMenuLeadId;$('#repMenu').hidden=true;repMenuLeadId=null;if(!x)return;let name;if(btn.dataset.new){name=prompt('Assign this lead to a sales rep:','');if(name===null)return;name=name.trim()}else{name=btn.dataset.rep}await patchLead(x,{owner:name,updatedAt:new Date().toISOString()});if(!useDb)onLeadsChanged()}
+    $('#repMenu').addEventListener('click',e=>{let btn=e.target.closest('.rep-menu-item');if(btn)pickRep(btn)});
+    document.addEventListener('click',e=>{let menu=$('#repMenu');if(!menu.hidden&&!menu.contains(e.target))menu.hidden=true});
+    window.addEventListener('scroll',()=>{$('#repMenu').hidden=true},true);
+    window.addEventListener('resize',()=>{$('#repMenu').hidden=true});
+    async function addComment(){let text=$('#newComment').value.trim();if(!text)return;let l=leads.find(l=>l.id===activeId);if(!l)return;let comments=[...(l.comments||[]),{text,author:l.owner||'Team',at:new Date().toISOString()}];await patchLead(activeId,{comments,updatedAt:new Date().toISOString()});$('#newComment').value='';if(!useDb)onLeadsChanged()}
+    async function deleteLead(){if(activeId&&confirm('Delete this lead?')){await removeLead(activeId);$('#leadDialog').close();if(!useDb)onLeadsChanged()}}
+    async function deleteLeadDirect(e,x){e.preventDefault();e.stopPropagation();let l=leads.find(l=>l.id===x);if(!l)return;if(confirm(`Delete "${l.name}"?`)){await removeLead(x);if(!useDb)onLeadsChanged()}}
+    function norm(h){return h.toLowerCase().trim().replace(/[^a-z]/g,'')}
+    function parseCSV(text){let lines=text.replace(/\r/g,'').split('\n').filter(Boolean), parse=s=>{let a=[],v='',q=false;for(let i=0;i<s.length;i++){if(s[i]=='"'){if(q&&s[i+1]=='"'){v+='"';i++}else q=!q}else if(s[i]==','&&!q){a.push(v.trim());v=''}else v+=s[i]}a.push(v.trim());return a}, rawHeaders=parse(lines.shift()||''), rows=lines.map(parse);return {rawHeaders,rows}}
+    function parseExcel(buf){if(typeof XLSX==='undefined')throw new Error('Excel support failed to load');let wb=XLSX.read(buf,{type:'array'}), ws=wb.Sheets[wb.SheetNames[0]], aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''}), rawHeaders=(aoa.shift()||[]).map(x=>String(x??'').trim()), rows=aoa.map(r=>r.map(x=>String(x??'').trim()));return {rawHeaders,rows}}
+    async function importRows(rawHeaders,rows){let headers=rawHeaders.map(norm), get=(r,...names)=>{let i=headers.findIndex(h=>names.includes(h));return i<0?'':r[i]||''}, topFields=new Set(['name','leadname','fullname','firstname','customername','clientname','contactname','phone','phonenumber','mobilenumber','mobile','contact','contactnumber','email','emailaddress','company','companyname','brand','brandname','business','salesperson','salesrep','owner','assignee','assignedto']), added=0;for(let r of rows){let name=get(r,'name','leadname','fullname','firstname','customername','clientname','contactname');if(!name)continue;let extraAnswers=r.map((value,i)=>!topFields.has(headers[i])&&value?`${rawHeaders[i]}: ${value}`:'').filter(Boolean);let now=new Date().toISOString(), metaComment=extraAnswers.length?`Meta lead details\n${extraAnswers.join('\n')}`:'';await createLead({name,phone:get(r,'phone','phonenumber','mobilenumber','mobile','contact','contactnumber'),email:get(r,'email','emailaddress'),company:get(r,'company','companyname','brand','brandname','business'),owner:'',status:STATUSES[0],comments:metaComment?[{text:metaComment,author:'Meta import',at:now}]:[],createdAt:now,updatedAt:now});added++}return added}
+    async function importCSV(e){let file=e.target.files[0];if(!file)return;let isExcel=/\.(xlsx|xls)$/i.test(file.name);try{let {rawHeaders,rows}=isExcel?parseExcel(await file.arrayBuffer()):parseCSV(await file.text());let added=await importRows(rawHeaders,rows);$('#importHint').textContent=`Imported ${added} leads into Incoming leads. Assign each one to a sales rep when ready.`}catch(err){console.error('Import failed',err);$('#importHint').textContent=`Import failed: ${err.message}`}e.target.value='';if(!useDb)onLeadsChanged()}
+    function csv(v){return '"'+String(v||'').replace(/"/g,'""')+'"'}function exportCSV(){let text=['name,phone,email,company,salesperson,status,comments',...leads.map(l=>[l.name,l.phone,l.email,l.company,l.owner,l.status,(l.comments||[]).map(c=>c.text).join(' | ')].map(csv).join(','))].join('\n'), a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/csv'}));a.download='pipeline-leads.csv';a.click();URL.revokeObjectURL(a.href)}
+    async function loadDemo(){if(leads.length&&!confirm('Add example leads to your existing data?'))return;let samples=[['Ananya Shah','+91 98765 41022','ananya@northstar.in','Northstar Logistics','Ravi','New leads'],['Vikram Mehta','+91 98765 61810','vikram@acme.co','Acme Retail','Priya','P1'],['Neha Kapoor','+91 98765 92145','neha@weave.in','Weave Studio','Ravi','Follow up later']];for(let [name,phone,email,company,owner,status] of samples){let now=new Date().toISOString();await createLead({name,phone,email,company,owner,status,comments:[],createdAt:now,updatedAt:now})}if(!useDb)onLeadsChanged()}
+    async function waitForPromise(name,timeoutMs){let start=Date.now();while(!window[name]&&Date.now()-start<timeoutMs){await new Promise(r=>setTimeout(r,20))}return window[name]||null}
+    async function ensureDb(){if(db)return;try{let p=await waitForPromise('__dbReadyPromise',4000);if(p){const d=await p;if(d){db=d;useDb=true}}}catch(err){useDb=false}}
+    let unsubscribeLeads=null;
+    function subscribeLeads(){let badge=$('#syncBadge'), text=$('#syncText');if(unsubscribeLeads){unsubscribeLeads();unsubscribeLeads=null}if(useDb){badge.classList.remove('offline');text.textContent='Synced — shared with everyone on this link';unsubscribeLeads=db.collection('leads').onSnapshot(snap=>{leads=snap.docs.map(d=>({id:d.id,...d.data()}));onLeadsChanged()},err=>{console.error('CRM sync error',err);badge.classList.add('offline');text.textContent='Sync interrupted — reload to retry'})}else{badge.classList.add('offline');text.textContent='Saved on this device only';leads=JSON.parse(localStorage.getItem('pipeline-crm-leads')||'[]');render()}}
+    async function showApp(user){$('#authGate').hidden=true;$('#appRoot').hidden=false;$('#authUserEmail').textContent=user.email;await ensureDb();subscribeLeads()}
+    function showAuthGate(){$('#appRoot').hidden=true;$('#authGate').hidden=false;if(unsubscribeLeads){unsubscribeLeads();unsubscribeLeads=null}leads=[];activeId=null;$('#authError').textContent='';$('#authForm').reset()}
+    async function doSignOut(){try{await window.__auth.signOut()}catch(err){console.error('Sign out failed',err)}}
+    async function handleAuthSubmit(e){e.preventDefault();let email=$('#authEmail').value.trim(), password=$('#authPassword').value, btn=$('#authSubmit'), err=$('#authError');err.textContent='';btn.disabled=true;btn.textContent='Signing in…';try{await window.__auth.signIn(email,password)}catch(e2){err.textContent='Could not sign in — check your email and password.'}btn.disabled=false;btn.textContent='Sign in'}
+    $('#authForm').addEventListener('submit',handleAuthSubmit);
+    async function bootstrapAuth(){$('#authGate').hidden=true;$('#appRoot').hidden=false;await ensureDb();subscribeLeads()}
+    bootstrapAuth();
+  </script>
+</body></html>
