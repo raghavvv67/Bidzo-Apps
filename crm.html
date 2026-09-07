@@ -13,6 +13,7 @@
     #syncBadge .dot { width:7px; height:7px; border-radius:50%; background:#5fce8f }
     #syncBadge.offline .dot { background:#e0a23a }
     #authGate { position:fixed; inset:0; background:var(--bg); display:grid; place-items:center; z-index:100; padding:20px }
+    #authGate[hidden] { display:none }
     .auth-card { background:#fff; border:1px solid var(--line); border-radius:14px; padding:32px; width:min(360px, 100%); box-shadow:0 16px 60px #17233c1a }
     .auth-card h2 { margin:0 0 4px; font-size:19px } .auth-card .sub2 { color:var(--muted); font-size:13px; margin-bottom:20px }
     .auth-card label { display:grid; gap:5px; color:var(--muted); font-size:12px; margin-bottom:14px }
@@ -43,7 +44,7 @@
     </form>
   </div>
   <div id="appRoot" hidden>
-  <header><div><h1>Pipeline CRM</h1><div class="sub">A simple shared-sales workflow</div><div id="syncBadge" class="offline"><span class="dot"></span><span id="syncText">Saved on this device only</span></div></div><div class="user-badge"><span id="authUserEmail"></span><button class="secondary" onclick="doSignOut()">Sign out</button><button class="secondary" onclick="openNewLead()">+ Add lead</button></div></header>
+  <header><div><h1>Pipeline CRM</h1><div class="sub">A simple shared-sales workflow</div><div id="syncBadge" class="offline"><span class="dot"></span><span id="syncText">Saved on this device only</span></div></div><button class="secondary" onclick="openNewLead()">+ Add lead</button></header>
   <main>
     <div class="toolbar"><input id="search" placeholder="Search name, phone, company, salesperson…" oninput="render()"/><select id="filterStatus" onchange="render()"><option value="">All statuses</option></select><select id="filterOwner" onchange="render()"><option value="">All salespeople</option></select><label class="file-label secondary" for="csv">Import CSV / Excel</label><input id="csv" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" onchange="importCSV(event)"/><button class="secondary" onclick="exportCSV()">Export CSV</button><button class="secondary" onclick="loadDemo()">Load example leads</button></div>
     <div class="hint" id="importHint">Import a regular or Meta lead CSV or Excel file (.csv, .xlsx, .xls). Name, sales rep, brand, phone, email, and status go on the card; every other answer is saved as a comment.</div>
@@ -150,7 +151,7 @@
     async function doSignOut(){try{await window.__auth.signOut()}catch(err){console.error('Sign out failed',err)}}
     async function handleAuthSubmit(e){e.preventDefault();let email=$('#authEmail').value.trim(), password=$('#authPassword').value, btn=$('#authSubmit'), err=$('#authError');err.textContent='';btn.disabled=true;btn.textContent='Signing in…';try{await window.__auth.signIn(email,password)}catch(e2){err.textContent='Could not sign in — check your email and password.'}btn.disabled=false;btn.textContent='Sign in'}
     $('#authForm').addEventListener('submit',handleAuthSubmit);
-    async function bootstrapAuth(){window.__onAuthChange=user=>{if(user)showApp(user);else showAuthGate()};let p=await waitForPromise('__authStatePromise',4000);if(p){let user=await p;if(user)showApp(user);else showAuthGate()}else{$('#authGate').hidden=true;$('#appRoot').hidden=false;await ensureDb();subscribeLeads()}}
+    async function bootstrapAuth(){$('#authGate').hidden=true;$('#appRoot').hidden=false;await ensureDb();subscribeLeads()}
     bootstrapAuth();
   </script>
 </body></html>
