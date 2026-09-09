@@ -149,8 +149,8 @@
     let repMenuLeadId=null, repMenuMode='card';
     function populateRepMenu(currentOwner){let menu=$('#repMenu');menu.innerHTML=SALESPEOPLE.map(o=>`<button type="button" class="rep-menu-item" data-rep="${esc(o)}">${o===currentOwner?'✓ ':''}${esc(o)}</button>`).join('')+'<div class="rep-menu-divider"></div>'+`<button type="button" class="rep-menu-item" data-rep="">${!currentOwner?'✓ ':''}Unassigned</button>`;return menu}
     function positionMenuNear(el){let menu=$('#repMenu'), rect=el.getBoundingClientRect();menu.style.top=Math.min(rect.bottom+6,window.innerHeight-260)+'px';menu.style.left=Math.min(rect.left,window.innerWidth-190)+'px';menu.hidden=false}
-    function openRepMenu(e,x){e.preventDefault();e.stopPropagation();repMenuMode='card';repMenuLeadId=x;let l=leads.find(l=>l.id===x);if(!l)return;populateRepMenu(l.owner);positionMenuNear(e.currentTarget)}
-    function openOwnerPicker(e){e.preventDefault();e.stopPropagation();repMenuMode='modal';populateRepMenu($('#leadForm [name=owner]').value);positionMenuNear(e.currentTarget)}
+    function openRepMenu(e,x){e.preventDefault();e.stopPropagation();repMenuMode='card';repMenuLeadId=x;let l=leads.find(l=>l.id===x);if(!l)return;document.body.appendChild($('#repMenu'));populateRepMenu(l.owner);positionMenuNear(e.currentTarget)}
+    function openOwnerPicker(e){e.preventDefault();e.stopPropagation();repMenuMode='modal';$('#leadDialog').appendChild($('#repMenu'));populateRepMenu($('#leadForm [name=owner]').value);positionMenuNear(e.currentTarget)}
     async function pickRep(btn){let mode=repMenuMode;$('#repMenu').hidden=true;let name=btn.dataset.rep;if(mode==='modal'){setOwnerPicker(name);return}let x=repMenuLeadId;repMenuLeadId=null;if(!x)return;let l=leads.find(l=>l.id===x);let patch={owner:name,updatedAt:new Date().toISOString()};if(l&&name&&l.status==='Incoming leads')patch.status='New leads';await patchLead(x,patch);if(!useDb)onLeadsChanged()}
     $('#repMenu').addEventListener('click',e=>{let btn=e.target.closest('.rep-menu-item');if(btn)pickRep(btn)});
     document.addEventListener('click',e=>{let menu=$('#repMenu');if(!menu.hidden&&!menu.contains(e.target))menu.hidden=true});
