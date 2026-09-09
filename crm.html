@@ -30,6 +30,31 @@
     .stat { background:var(--card); border:1px solid var(--line); padding:15px; border-radius:10px; cursor:pointer }.stat b { display:block; font-size:23px; margin-top:3px }.stat small { color:var(--muted) }
     .hint { color:var(--muted); font-size:12px }.board { display:grid; grid-template-columns:repeat(9,minmax(220px,1fr)); gap:14px; overflow-x:auto; align-items:start; padding-bottom:12px }.column { background:#e9edf5; border-radius:11px; min-height:430px; min-width:0; padding:10px; transition:.15s }.column.over { background:#dbe5ff; outline:2px dashed #315efb }.column-head{display:flex;justify-content:space-between;align-items:center;padding:4px 3px 11px;font-weight:700}.count{background:#d7deed;color:#52617b;border-radius:12px;padding:1px 7px;font-size:12px}.lead-list{min-height:365px;min-width:0;display:grid;gap:9px;align-content:start}.lead-card{background:#fff;border-radius:9px;padding:12px;box-shadow:0 1px 2px #192b4a12;cursor:grab;border:1px solid #e3e7ef;min-width:0;overflow-wrap:anywhere}.lead-card:active{cursor:grabbing}.lead-card.dragging{opacity:.45}.card-top{display:flex;justify-content:space-between;align-items:center;gap:9px;margin-bottom:5px;min-width:0}.lead-card h3{font-size:14px;margin:0;color:#203eac;min-width:0;overflow-wrap:anywhere}.lead-card p{margin:3px 0;color:#52617b;font-size:12px}.rep-avatar{width:34px;height:34px;flex:none;border-radius:50%;background:#fbb5c9;color:#452333;display:grid;place-items:center;font-size:13px;font-weight:600;letter-spacing:-.3px;border:0;cursor:pointer;font-family:inherit}.rep-avatar:hover{outline:2px solid #315efb55}.rep-menu{position:fixed;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px #17233c33;padding:6px;min-width:170px;max-height:260px;overflow-y:auto;z-index:80;display:grid;gap:2px}.rep-menu[hidden]{display:none}.rep-menu-item{width:100%;text-align:left;background:transparent;color:var(--ink);padding:8px 10px;border-radius:6px;font-size:13px;border:0;cursor:pointer;font:inherit;display:block}.rep-menu-item:hover{background:#eef1f8}.rep-menu-divider{border-top:1px solid var(--line);margin:4px 2px}.assign{background:#315efb;color:#fff;border:0;border-radius:6px;padding:5px 7px;font-size:11px;cursor:pointer}.lead-card.dragging{opacity:.35;transition:opacity .12s ease}#dropIndicator{position:fixed;height:3px;border-radius:3px;background:var(--brand);box-shadow:0 0 0 3px #315efb26;pointer-events:none;z-index:60;transition:top .1s ease-out,left .1s ease-out,width .1s ease-out,opacity .1s ease-out;opacity:0}#dropIndicator.show{opacity:1}.owner-picker{width:100%;text-align:left;justify-content:flex-start;background:#fff;color:var(--ink);border:1px solid #d7ddea}.owner-picker.placeholder{color:#8a93a6}.card-footer{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:11px;padding-top:9px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}.empty-col{color:#7d899e;font-size:12px;text-align:center;padding:24px 6px;border:1px dashed #cbd3e1;border-radius:8px}.empty { text-align:center; padding:52px; color:var(--muted) }
     #confirmDialog{width:min(360px,100% - 32px)}
+    #identityGate{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:100;padding:20px}
+    #identityGate[hidden]{display:none}
+    .identity-btn{width:100%;justify-content:center;margin-bottom:10px;padding:14px;font-size:15px}
+    .header-actions{display:flex;align-items:center;gap:10px}
+    .icon-btn{position:relative}
+    .badge{background:#e5484d;color:#fff;border-radius:10px;padding:0 6px;font-size:11px;line-height:16px;height:16px;min-width:16px;text-align:center;position:absolute;top:-6px;right:-6px}
+    .identity-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#cdd6ea;cursor:pointer;background:transparent;border:1px solid #ffffff33;padding:6px 10px;border-radius:999px}
+    .tabs{background:#0f1830;display:flex;gap:4px;padding:0 32px;overflow-x:auto}
+    .tab{background:transparent;color:#9aa7c2;border:0;border-radius:0;padding:13px 18px;font-weight:600;border-bottom:3px solid transparent;cursor:pointer;position:relative}
+    .tab.active{color:#fff;border-bottom-color:var(--brand)}
+    .tab.icon-btn .badge{top:6px;right:2px}
+    .tab-panel[hidden]{display:none}
+    .chat-panel{max-width:720px;margin:0 auto}
+    #chatMessages{max-height:none;min-height:200px}
+    #chatMessages{max-height:340px;overflow-y:auto;display:grid;gap:12px;margin-bottom:14px;padding-right:4px}
+    .chat-msg{padding-bottom:10px;border-bottom:1px solid var(--line)}
+    .chat-msg.me{margin-left:24px}
+    .mention-wrap{position:relative}
+    .mention-dropdown{position:absolute;top:100%;left:0;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px #17233c22;z-index:10;min-width:150px;margin-top:4px;overflow:hidden}
+    .mention-dropdown[hidden]{display:none}
+    .mention-item{display:block;width:100%;text-align:left;background:transparent;color:var(--ink);padding:8px 10px;border:0;cursor:pointer;font:inherit}
+    .mention-item:hover{background:#eef1f8}
+    .mention{color:var(--brand);font-weight:600}
+    .notif-item{padding:10px 0;border-bottom:1px solid var(--line)}
+    .notif-item:last-child{border-bottom:0}
     dialog { border:0; border-radius:14px; padding:0; width:min(620px, calc(100% - 32px)); box-shadow:0 16px 60px #17233c55 } dialog::backdrop { background:#17233c88 }.modal-head { padding:18px 22px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center }.modal-head h2{margin:0;font-size:18px}.modal-body{padding:20px 22px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.grid label,.comment-box label { display:grid; gap:5px; color:var(--muted); font-size:12px }.grid input,.grid select{width:100%}.modal-actions{padding:15px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:9px}.comments { margin-top:22px; border-top:1px solid var(--line); padding-top:16px }.comment { padding:10px 0; border-bottom:1px solid var(--line) }.comment-head{font-weight:600;margin-bottom:4px}.comment-points{margin:0;padding-left:18px;display:grid;gap:3px}.comment-meta { color:var(--muted); font-size:12px; margin-bottom:3px }.comment-box { margin-top:13px }.comment-box textarea{width:100%; min-height:68px; resize:vertical} .close{background:transparent;color:var(--muted);font-size:20px;padding:2px 7px} #csv{display:none}@media(max-width:700px){header,main{padding-left:16px;padding-right:16px}.stats{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}
   </style>
 </head>
@@ -44,12 +69,39 @@
       <p id="authError"></p>
     </form>
   </div>
+  <div id="identityGate" hidden>
+    <div class="auth-card">
+      <h2>Who are you?</h2>
+      <div class="sub2">Pick your name so mentions and messages reach you on this device.</div>
+      <div id="identityOptions"></div>
+    </div>
+  </div>
   <div id="appRoot" hidden>
-  <header><div><h1>Pipeline CRM</h1><div class="sub">A simple shared-sales workflow</div><div id="syncBadge" class="offline"><span class="dot"></span><span id="syncText">Saved on this device only</span></div></div><button class="secondary" onclick="openNewLead()">+ Add lead</button></header>
+  <header><div><h1>Pipeline CRM</h1><div class="sub">A simple shared-sales workflow</div><div id="syncBadge" class="offline"><span class="dot"></span><span id="syncText">Saved on this device only</span></div></div><div class="header-actions"><button type="button" class="identity-chip" id="identityChip" onclick="showIdentityGate()">Who am I?</button><button type="button" class="secondary icon-btn" onclick="openNotifs()">🔔<span class="badge" id="notifBadge" hidden>0</span></button></div></header>
+  <nav class="tabs">
+    <button type="button" class="tab active" data-tab="leads" onclick="switchTab('leads')">Leads</button>
+    <button type="button" class="tab icon-btn" data-tab="chat" onclick="switchTab('chat')">Team Chat<span class="badge" id="chatTabBadge" hidden>0</span></button>
+    <button type="button" class="tab" data-tab="dashboard" onclick="switchTab('dashboard')">Dashboard</button>
+  </nav>
   <main>
-    <div class="toolbar"><input id="search" placeholder="Search name, phone, company, salesperson…" oninput="render()"/><select id="filterStatus" onchange="render()"><option value="">All statuses</option></select><select id="filterOwner" onchange="render()"><option value="">All salespeople</option></select><label class="file-label secondary" for="csv">Import CSV / Excel</label><input id="csv" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" onchange="importCSV(event)"/><button class="secondary" onclick="exportCSV()">Export CSV</button><button class="secondary" onclick="loadDemo()">Load example leads</button></div>
-    <div class="hint" id="importHint">Import a regular or Meta lead CSV or Excel file (.csv, .xlsx, .xls). Name, sales rep, brand, phone, email, and status go on the card; every other answer is saved as a comment.</div>
-    <section class="stats" id="stats"></section><div class="board" id="board"></div><div class="empty" id="empty">No leads yet. Add one or import your CSV to get started.</div>
+    <section id="tabLeads" class="tab-panel">
+      <div class="toolbar"><input id="search" placeholder="Search name, phone, company, salesperson…" oninput="render()"/><select id="filterStatus" onchange="render()"><option value="">All statuses</option></select><select id="filterOwner" onchange="render()"><option value="">All salespeople</option></select><label class="file-label secondary" for="csv">Import CSV / Excel</label><input id="csv" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" onchange="importCSV(event)"/><button class="secondary" onclick="exportCSV()">Export CSV</button><button class="secondary" onclick="loadDemo()">Load example leads</button><button onclick="openNewLead()" style="margin-left:auto">+ Add lead</button></div>
+      <div class="hint" id="importHint">Import a regular or Meta lead CSV or Excel file (.csv, .xlsx, .xls). Name, sales rep, brand, phone, email, and status go on the card; every other answer is saved as a comment.</div>
+      <section class="stats" id="stats"></section><div class="board" id="board"></div><div class="empty" id="empty">No leads yet. Add one or import your CSV to get started.</div>
+    </section>
+    <section id="tabChat" class="tab-panel" hidden>
+      <div class="chat-panel">
+        <div id="chatMessages"></div>
+        <div class="comment-box mention-wrap">
+          <label>Message<textarea id="chatInput" placeholder="Message the team… use @ to mention someone"></textarea></label>
+          <div class="mention-dropdown" id="chatMentionDropdown" hidden></div>
+          <button type="button" onclick="sendChatMessage()" style="margin-top:8px">Send</button>
+        </div>
+      </div>
+    </section>
+    <section id="tabDashboard" class="tab-panel" hidden>
+      <div class="empty">📊 Dashboard coming soon — this tab is ready whenever you want to build it out.</div>
+    </section>
   </main>
   </div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -70,7 +122,6 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const fsdb = getFirestore(app);
-        const leadsCol = collection(fsdb, 'leads');
         window.__auth = {
           signIn: (email, password) => signInWithEmailAndPassword(auth, email, password),
           signOut: () => signOut(auth),
@@ -84,13 +135,14 @@
         });
         return {
           collection(path) {
+            const col = collection(fsdb, path);
             return {
-              add: (data) => addDoc(leadsCol, data),
+              add: (data) => addDoc(col, data),
               doc: (id) => ({
-                update: (data) => updateDoc(doc(fsdb, 'leads', id), data),
-                delete: () => deleteDoc(doc(fsdb, 'leads', id)),
+                update: (data) => updateDoc(doc(fsdb, path, id), data),
+                delete: () => deleteDoc(doc(fsdb, path, id)),
               }),
-              onSnapshot: (next, err) => onSnapshot(leadsCol, snap => next({ docs: snap.docs.map(d => ({ id: d.id, data: () => d.data() })) }), err),
+              onSnapshot: (next, err) => onSnapshot(col, snap => next({ docs: snap.docs.map(d => ({ id: d.id, data: () => d.data() })) }), err),
             };
           }
         };
@@ -103,7 +155,8 @@
   <div id="repMenu" class="rep-menu" hidden></div>
   <div id="dropIndicator"></div>
   <dialog id="confirmDialog"><div class="modal-head"><h2>Are you sure?</h2></div><div class="modal-body"><p id="confirmMessage" style="margin:0"></p></div><div class="modal-actions"><button class="secondary" id="confirmCancelBtn">Cancel</button><button class="danger" id="confirmOkBtn">Delete</button></div></dialog>
-  <dialog id="leadDialog"><form method="dialog" id="leadForm"><div class="modal-head"><h2 id="dialogTitle">Lead details</h2><button class="close" value="cancel" formnovalidate aria-label="Close">×</button></div><div class="modal-body"><div class="grid"><label>Name<input name="name" required /></label><label>Phone<input name="phone" /></label><label>Email<input name="email" type="email" /></label><label>Brand name<input name="company" /></label><label>Salesperson<input type="hidden" name="owner" /><button type="button" class="owner-picker placeholder" id="ownerPickerBtn" onclick="openOwnerPicker(event)"><span id="ownerPickerLabel">Unassigned</span></button></label><label>Status<select name="status"></select></label></div><div class="comments"><strong>Comments & activity</strong><div id="commentList"></div><div class="comment-box"><label>New comment<textarea id="newComment" placeholder="Add a note, call outcome, or next step…"></textarea></label><button type="button" onclick="addComment()" style="margin-top:8px">Add comment</button></div></div></div><div class="modal-actions"><button class="danger" type="button" id="deleteBtn" onclick="deleteLead()">Delete</button><button class="secondary" value="cancel" formnovalidate>Cancel</button><button type="button" onclick="saveLead()">Save changes</button></div></form></dialog>
+  <dialog id="leadDialog"><form method="dialog" id="leadForm"><div class="modal-head"><h2 id="dialogTitle">Lead details</h2><button class="close" value="cancel" formnovalidate aria-label="Close">×</button></div><div class="modal-body"><div class="grid"><label>Name<input name="name" required /></label><label>Phone<input name="phone" /></label><label>Email<input name="email" type="email" /></label><label>Brand name<input name="company" /></label><label>Salesperson<input type="hidden" name="owner" /><button type="button" class="owner-picker placeholder" id="ownerPickerBtn" onclick="openOwnerPicker(event)"><span id="ownerPickerLabel">Unassigned</span></button></label><label>Status<select name="status"></select></label></div><div class="comments"><strong>Comments & activity</strong><div id="commentList"></div><div class="comment-box mention-wrap"><label>New comment<textarea id="newComment" placeholder="Add a note, call outcome, or next step… use @ to mention someone"></textarea></label><div class="mention-dropdown" id="commentMentionDropdown" hidden></div><button type="button" onclick="addComment()" style="margin-top:8px">Add comment</button></div></div></div><div class="modal-actions"><button class="danger" type="button" id="deleteBtn" onclick="deleteLead()">Delete</button><button class="secondary" value="cancel" formnovalidate>Cancel</button><button type="button" onclick="saveLead()">Save changes</button></div></form></dialog>
+  <dialog id="notifDialog"><div class="modal-head"><h2>Mentions</h2><button class="close" aria-label="Close" onclick="$('#notifDialog').close()">×</button></div><div class="modal-body"><div id="notifList"></div></div></dialog>
   <script>
     const STATUSES=['Incoming leads','New leads','P1','P2','Call not answered','Follow up later','Audit booked','Junk','Lost'];
     const SALESPEOPLE=['Priyanshu','Raghav'];
@@ -116,7 +169,7 @@
     function statusOptions(selected){return STATUSES.map(s=>`<option ${s===selected?'selected':''}>${s}</option>`).join('')}
     function refreshFilters(){let old=$('#filterOwner').value, oldStatus=$('#filterStatus').value; $('#filterStatus').innerHTML='<option value="">All statuses</option>'+STATUSES.map(s=>`<option ${s===oldStatus?'selected':''}>${s}</option>`).join(''); $('#filterOwner').innerHTML='<option value="">All salespeople</option>'+SALESPEOPLE.map(x=>`<option ${x===old?'selected':''}>${esc(x)}</option>`).join('')}
     function render(){refreshFilters();let q=$('#search').value.toLowerCase(), st=$('#filterStatus').value, ow=$('#filterOwner').value;let shown=leads.filter(l=>!st||l.status===st).filter(l=>!ow||l.owner===ow).filter(l=>!q||[l.name,l.phone,l.email,l.company,l.owner,l.status].join(' ').toLowerCase().includes(q));$('#stats').innerHTML=STATUSES.map(s=>`<div class="stat" onclick="$('#filterStatus').value='${s}';render()"><small>${s}</small><b>${leads.filter(l=>l.status===s).length}</b></div>`).join('');$('#board').innerHTML=STATUSES.map(s=>{let cards=shown.filter(l=>l.status===s).sort((a,b)=>orderOf(a)-orderOf(b));return `<section class="column" data-status="${s}" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="dropLead(event,'${s}')"><div class="column-head"><span>${s}</span><span class="count">${cards.length}</span></div><div class="lead-list">${cards.length?cards.map(card).join(''):'<div class="empty-col">Drag leads here</div>'}</div></section>`}).join('');$('#empty').style.display=leads.length?'none':'block'}
-    function onLeadsChanged(){render();let dlg=$('#leadDialog');if(dlg.open&&activeId){let l=leads.find(l=>l.id===activeId);if(l)renderComments(l)}}
+    function onLeadsChanged(){render();let dlg=$('#leadDialog');if(dlg.open&&activeId){let l=leads.find(l=>l.id===activeId);if(l)renderComments(l)}if(typeof refreshNotifBadges==='function')refreshNotifBadges()}
     function card(l){let rep=l.owner||'Unassigned', assignment=!l.owner?`<button class="assign" onclick="event.stopPropagation();openRepMenu(event,'${l.id}')">Assign to sales rep</button>`:'<span>Click for details</span>';return `<article class="lead-card" data-id="${l.id}" draggable="true" ondragstart="dragStart(event,'${l.id}')" ondragend="dragEnd(event)" ondragover="cardDragOver(event)" ondrop="cardDrop(event,'${l.status}')" onclick="openLead('${l.id}')" oncontextmenu="deleteLeadDirect(event,'${l.id}')"><div class="card-top"><h3>${esc(l.name)}</h3><button type="button" class="rep-avatar" onclick="openRepMenu(event,'${l.id}')" title="Sales rep: ${esc(rep)} — click to reassign" aria-label="Sales rep: ${esc(rep)} — click to reassign">${initials(rep)}</button></div><p><strong>Brand:</strong> ${esc(l.company||'—')}</p><p><strong>Phone:</strong> ${esc(l.phone||'—')}</p><p><strong>Email:</strong> ${esc(l.email||'—')}</p><div class="card-footer">${assignment}<span>${l.comments?.length||0} comments</span></div></article>`}
     function dragStart(e,x){e.dataTransfer.setData('text/plain',x);e.dataTransfer.effectAllowed='move';e.currentTarget.classList.add('dragging')}
     let pendingDrop=null;
@@ -139,8 +192,11 @@
     function setOwnerPicker(name){$('#leadForm [name=owner]').value=name||'';let btn=$('#ownerPickerBtn'), label=$('#ownerPickerLabel');label.textContent=name||'Unassigned';btn.classList.toggle('placeholder',!name)}
     function openNewLead(){activeId=null;$('#dialogTitle').textContent='Add lead';$('#leadForm').reset();$('#leadForm [name=status]').innerHTML=statusOptions(STATUSES[0]);$('#leadForm [name=status]').disabled=true;setOwnerPicker('');$('#commentList').innerHTML='';$('#deleteBtn').style.display='none';$('#leadDialog').showModal()}
     function openLead(x){let l=leads.find(l=>l.id===x);if(!l)return;activeId=x;$('#dialogTitle').textContent='Lead details';for(let k of ['name','phone','email','company'])$('#leadForm [name='+k+']').value=l[k]||'';setOwnerPicker(l.owner);$('#leadForm [name=status]').innerHTML=statusOptions(l.status);$('#leadForm [name=status]').disabled=false;$('#newComment').value='';$('#deleteBtn').style.display='block';renderComments(l);$('#leadDialog').showModal()}
-    function commentBody(text){let lines=String(text||'').split('\n').map(x=>x.trim()).filter(Boolean);if(lines.length<=1)return esc(text||'');let [head,...rest]=lines;return `<div class="comment-head">${esc(head)}</div><ul class="comment-points">${rest.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`}
+    function parseMentions(text){return SALESPEOPLE.filter(name=>new RegExp('@'+name+'\\b','i').test(text||''))}
+    function highlightMentions(escapedText){return escapedText.replace(/@(\w+)/g,(m,name)=>SALESPEOPLE.some(n=>n.toLowerCase()===name.toLowerCase())?`<span class="mention">@${name}</span>`:m)}
+    function commentBody(text){let lines=String(text||'').split('\n').map(x=>x.trim()).filter(Boolean);if(lines.length<=1)return highlightMentions(esc(text||''));let [head,...rest]=lines;return `<div class="comment-head">${highlightMentions(esc(head))}</div><ul class="comment-points">${rest.map(x=>`<li>${highlightMentions(esc(x))}</li>`).join('')}</ul>`}
     function renderComments(l){$('#commentList').innerHTML=(l.comments||[]).length?(l.comments||[]).slice().reverse().map(c=>`<div class="comment"><div class="comment-meta">${esc(c.author||'Team')} · ${date(c.at)}</div>${commentBody(c.text)}</div>`).join(''):'<p class="hint">No comments yet.</p>'}
+    function mentionAutocomplete(textareaId,dropdownId){let ta=$('#'+textareaId), dd=$('#'+dropdownId);function update(){let val=ta.value, pos=ta.selectionStart, before=val.slice(0,pos), m=before.match(/@([a-zA-Z]*)$/);if(!m){dd.hidden=true;return}let partial=m[1].toLowerCase(), matches=SALESPEOPLE.filter(n=>n.toLowerCase().startsWith(partial));if(!matches.length){dd.hidden=true;return}dd.innerHTML=matches.map(n=>`<button type="button" class="mention-item" data-name="${esc(n)}">@${esc(n)}</button>`).join('');dd.hidden=false}ta.addEventListener('input',update);ta.addEventListener('blur',()=>setTimeout(()=>dd.hidden=true,150));dd.addEventListener('mousedown',e=>{let btn=e.target.closest('.mention-item');if(!btn)return;e.preventDefault();let val=ta.value, pos=ta.selectionStart, before=val.slice(0,pos).replace(/@([a-zA-Z]*)$/,'@'+btn.dataset.name+' '), after=val.slice(pos);ta.value=before+after;dd.hidden=true;ta.focus()})}
     let lastOrderStamp=0;
     function nextOrderStamp(){let t=-Date.now();if(lastOrderStamp!==0&&t>=lastOrderStamp)t=lastOrderStamp-1;lastOrderStamp=t;return t}
     async function createLead(data){if(data.order==null)data.order=nextOrderStamp();if(useDb){await db.collection('leads').add(data)}else{leads.unshift({...data,id:uid()});saveLocal()}}
@@ -158,7 +214,7 @@
     document.addEventListener('click',e=>{let menu=$('#repMenu');if(!menu.hidden&&!menu.contains(e.target))menu.hidden=true});
     window.addEventListener('scroll',()=>{$('#repMenu').hidden=true},true);
     window.addEventListener('resize',()=>{$('#repMenu').hidden=true});
-    async function addComment(){let text=$('#newComment').value.trim();if(!text)return;let l=leads.find(l=>l.id===activeId);if(!l)return;let comments=[...(l.comments||[]),{text,author:l.owner||'Team',at:new Date().toISOString()}];await patchLead(activeId,{comments,updatedAt:new Date().toISOString()});$('#newComment').value='';if(!useDb)onLeadsChanged()}
+    async function addComment(){let text=$('#newComment').value.trim();if(!text)return;let l=leads.find(l=>l.id===activeId);if(!l)return;let comments=[...(l.comments||[]),{text,author:getIdentity()||l.owner||'Team',at:new Date().toISOString(),mentions:parseMentions(text)}];await patchLead(activeId,{comments,updatedAt:new Date().toISOString()});$('#newComment').value='';if(!useDb)onLeadsChanged()}
     function confirmDialog(message){return new Promise(resolve=>{let dlg=$('#confirmDialog');$('#confirmMessage').textContent=message;let ok=$('#confirmOkBtn'), cancel=$('#confirmCancelBtn');let done=v=>{ok.removeEventListener('click',onOk);cancel.removeEventListener('click',onCancel);dlg.removeEventListener('cancel',onCancel);dlg.close();resolve(v)};let onOk=()=>done(true), onCancel=()=>done(false);ok.addEventListener('click',onOk);cancel.addEventListener('click',onCancel);dlg.addEventListener('cancel',onCancel);if($('#leadDialog').open)$('#leadDialog').appendChild(dlg);else document.body.appendChild(dlg);dlg.showModal()})}
     async function deleteLead(){if(activeId&&await confirmDialog('Delete this lead? This can\'t be undone.')){await removeLead(activeId);$('#leadDialog').close();if(!useDb)onLeadsChanged()}}
     async function deleteLeadDirect(e,x){e.preventDefault();e.stopPropagation();let l=leads.find(l=>l.id===x);if(!l)return;if(await confirmDialog(`Delete "${l.name}"? This can't be undone.`)){await removeLead(x);if(!useDb)onLeadsChanged()}}
@@ -178,7 +234,27 @@
     async function doSignOut(){try{await window.__auth.signOut()}catch(err){console.error('Sign out failed',err)}}
     async function handleAuthSubmit(e){e.preventDefault();let email=$('#authEmail').value.trim(), password=$('#authPassword').value, btn=$('#authSubmit'), err=$('#authError');err.textContent='';btn.disabled=true;btn.textContent='Signing in…';try{await window.__auth.signIn(email,password)}catch(e2){err.textContent='Could not sign in — check your email and password.'}btn.disabled=false;btn.textContent='Sign in'}
     $('#authForm').addEventListener('submit',handleAuthSubmit);
-    async function bootstrapAuth(){$('#authGate').hidden=true;$('#appRoot').hidden=false;await ensureDb();subscribeLeads()}
+
+    function getIdentity(){return localStorage.getItem('crm-identity')||''}
+    function setIdentity(name){localStorage.setItem('crm-identity',name)}
+    function renderIdentityChip(){$('#identityChip').textContent=getIdentity()?('👤 '+getIdentity()):'Who am I?'}
+    function showIdentityGate(){$('#identityOptions').innerHTML=SALESPEOPLE.map(n=>`<button type="button" class="identity-btn" onclick="chooseIdentity('${esc(n)}')">${esc(n)}</button>`).join('');$('#identityGate').hidden=false}
+    function chooseIdentity(name){setIdentity(name);$('#identityGate').hidden=true;renderIdentityChip();refreshNotifBadges()}
+
+    let chatMessages=[], unsubscribeChat=null;
+    function renderChat(){let identity=getIdentity(), box=$('#chatMessages');box.innerHTML=chatMessages.length?chatMessages.map(m=>`<div class="chat-msg${m.author===identity?' me':''}"><div class="comment-meta">${esc(m.author||'Someone')} · ${date(m.at)}</div><div>${highlightMentions(esc(m.text))}</div></div>`).join(''):'<p class="hint">No messages yet. Say hello 👋</p>';box.scrollTop=box.scrollHeight}
+    let chatRetries=0;
+    function subscribeChat(){if(!useDb)return;unsubscribeChat=db.collection('chat').onSnapshot(snap=>{chatRetries=0;chatMessages=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>new Date(a.at)-new Date(b.at));renderChat();refreshNotifBadges()},err=>{console.error('Chat sync error',err);if(chatRetries<3){chatRetries++;setTimeout(subscribeChat,700)}})}
+    async function sendChatMessage(){let text=$('#chatInput').value.trim();if(!text)return;let identity=getIdentity();if(!identity){showIdentityGate();return}let msg={text,author:identity,at:new Date().toISOString(),mentions:parseMentions(text)};if(useDb){await db.collection('chat').add(msg)}else{chatMessages.push({...msg,id:uid()});renderChat()}$('#chatInput').value=''}
+    function switchTab(name){if(name==='chat'&&!getIdentity()){showIdentityGate();return}document.querySelectorAll('.tab-panel').forEach(p=>p.hidden=(p.id!=='tab'+name.charAt(0).toUpperCase()+name.slice(1)));document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));if(name==='chat'&&getIdentity()){localStorage.setItem('crm-lastRead-chat-'+getIdentity(),new Date().toISOString());refreshNotifBadges()}}
+    mentionAutocomplete('chatInput','chatMentionDropdown');
+    mentionAutocomplete('newComment','commentMentionDropdown');
+
+    function computeMentionItems(){let identity=getIdentity();if(!identity)return[];let items=[];for(const l of leads){for(const c of (l.comments||[])){if(c.mentions&&c.mentions.includes(identity)&&c.author!==identity)items.push({leadId:l.id,leadName:l.name,text:c.text,author:c.author,at:c.at})}}items.sort((a,b)=>new Date(b.at)-new Date(a.at));return items}
+    function refreshNotifBadges(){let identity=getIdentity(), chatBadge=$('#chatTabBadge'), notifBadge=$('#notifBadge');if(!identity){chatBadge.hidden=true;notifBadge.hidden=true;return}let lastReadChat=localStorage.getItem('crm-lastRead-chat-'+identity)||'1970-01-01', chatUnread=chatMessages.filter(m=>m.author!==identity&&m.at>lastReadChat).length;chatBadge.textContent=chatUnread;chatBadge.hidden=chatUnread===0;let lastReadMentions=localStorage.getItem('crm-lastRead-mentions-'+identity)||'1970-01-01', mentionUnread=computeMentionItems().filter(it=>it.at>lastReadMentions).length;notifBadge.textContent=mentionUnread;notifBadge.hidden=mentionUnread===0}
+    function openNotifs(){if(!getIdentity()){showIdentityGate();return}let items=computeMentionItems();$('#notifList').innerHTML=items.length?items.map(it=>`<div class="notif-item"><div class="comment-meta">${esc(it.author)} mentioned you in <strong>${esc(it.leadName)}</strong> · ${date(it.at)}</div><div>${esc(it.text)}</div><button type="button" class="secondary" style="margin-top:8px" onclick="$('#notifDialog').close();openLead('${it.leadId}')">Open lead</button></div>`).join(''):'<p class="hint">No mentions yet.</p>';$('#notifDialog').showModal();localStorage.setItem('crm-lastRead-mentions-'+getIdentity(),new Date().toISOString());refreshNotifBadges()}
+
+    async function bootstrapAuth(){$('#authGate').hidden=true;$('#appRoot').hidden=false;await ensureDb();subscribeLeads();subscribeChat();renderIdentityChip();if(!getIdentity())showIdentityGate();refreshNotifBadges()}
     bootstrapAuth();
   </script>
 </body></html>
