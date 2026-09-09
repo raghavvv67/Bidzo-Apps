@@ -140,7 +140,7 @@
     function commentBody(text){let lines=String(text||'').split('\n').map(x=>x.trim()).filter(Boolean);if(lines.length<=1)return esc(text||'');let [head,...rest]=lines;return `<div class="comment-head">${esc(head)}</div><ul class="comment-points">${rest.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`}
     function renderComments(l){$('#commentList').innerHTML=(l.comments||[]).length?(l.comments||[]).slice().reverse().map(c=>`<div class="comment"><div class="comment-meta">${esc(c.author||'Team')} · ${date(c.at)}</div>${commentBody(c.text)}</div>`).join(''):'<p class="hint">No comments yet.</p>'}
     let lastOrderStamp=0;
-    function nextOrderStamp(){let t=Date.now();lastOrderStamp=t>lastOrderStamp?t:lastOrderStamp+1;return lastOrderStamp}
+    function nextOrderStamp(){let t=-Date.now();if(lastOrderStamp!==0&&t>=lastOrderStamp)t=lastOrderStamp-1;lastOrderStamp=t;return t}
     async function createLead(data){if(data.order==null)data.order=nextOrderStamp();if(useDb){await db.collection('leads').add(data)}else{leads.unshift({...data,id:uid()});saveLocal()}}
     async function patchLead(id,data){if(useDb){await db.collection('leads').doc(id).update(data)}else{let l=leads.find(l=>l.id===id);if(l)Object.assign(l,data);saveLocal()}}
     async function removeLead(id){if(useDb){await db.collection('leads').doc(id).delete()}else{leads=leads.filter(l=>l.id!==id);saveLocal()}}
