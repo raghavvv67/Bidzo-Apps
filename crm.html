@@ -246,8 +246,10 @@
     async function handleAuthSubmit(e){e.preventDefault();let email=$('#authEmail').value.trim(), password=$('#authPassword').value, btn=$('#authSubmit'), err=$('#authError');err.textContent='';btn.disabled=true;btn.textContent='Signing in…';try{await window.__auth.signIn(email,password)}catch(e2){err.textContent='Could not sign in — check your email and password.'}btn.disabled=false;btn.textContent='Sign in'}
     $('#authForm').addEventListener('submit',handleAuthSubmit);
 
-    function getIdentity(){return localStorage.getItem('crm-identity')||''}
-    function setIdentity(name){localStorage.setItem('crm-identity',name)}
+    function getCookie(name){let m=document.cookie.match(new RegExp('(?:^|; )'+name+'=([^;]*)'));return m?decodeURIComponent(m[1]):''}
+    function setCookie(name,value){document.cookie=name+'='+encodeURIComponent(value)+'; max-age='+(60*60*24*365)+'; path=/; SameSite=Lax'}
+    function getIdentity(){let v='';try{v=localStorage.getItem('crm-identity')||''}catch(e){}if(!v){v=getCookie('crm-identity');if(v){try{localStorage.setItem('crm-identity',v)}catch(e){}}}return v}
+    function setIdentity(name){try{localStorage.setItem('crm-identity',name)}catch(e){}setCookie('crm-identity',name)}
     function renderIdentityChip(){$('#identityChip').textContent=getIdentity()?('👤 '+getIdentity()):'Who am I?'}
     function showIdentityGate(){$('#identityOptions').innerHTML=SALESPEOPLE.map(n=>`<button type="button" class="identity-btn" onclick="chooseIdentity('${esc(n)}')">${esc(n)}</button>`).join('');$('#identityGate').hidden=false}
     function chooseIdentity(name){setIdentity(name);$('#identityGate').hidden=true;renderIdentityChip();refreshNotifBadges()}
