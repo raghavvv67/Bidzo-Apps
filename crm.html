@@ -83,6 +83,7 @@
     <button type="button" class="tab active" data-tab="leads" onclick="switchTab('leads')">Leads</button>
     <button type="button" class="tab icon-btn" data-tab="chat" onclick="switchTab('chat')">Team Chat<span class="badge" id="chatTabBadge" hidden>0</span></button>
     <button type="button" class="tab" data-tab="dashboard" onclick="switchTab('dashboard')">Dashboard</button>
+    <button type="button" class="tab" data-tab="audit" onclick="switchTab('audit')">Audit Generator</button>
   </nav>
   <main>
     <section id="tabLeads" class="tab-panel">
@@ -103,6 +104,9 @@
     </section>
     <section id="tabDashboard" class="tab-panel" hidden>
       <div class="empty">📊 Dashboard coming soon — this tab is ready whenever you want to build it out.</div>
+    </section>
+    <section id="tabAudit" class="tab-panel" hidden>
+      <iframe title="Bidzo Audit Generator" src="https://ecom-audit-generator-914aa.web.app/" style="width:100%;height:82vh;border:0;border-radius:11px;background:#fff;box-shadow:0 1px 3px #192b4a1a"></iframe>
     </section>
   </main>
   </div>
