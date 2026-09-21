@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pipeline CRM</title>
+  <title>Bidzo CRM</title>
   <style>
     :root { --ink:#17233c; --muted:#68758d; --line:#e6eaf0; --bg:#f5f7fb; --brand:#315efb; --card:#fff; }
     * { box-sizing:border-box } body { margin:0; font:14px/1.45 Inter, ui-sans-serif, system-ui, sans-serif; color:var(--ink); background:var(--bg) }
@@ -62,7 +62,7 @@
 <body>
   <div id="authGate">
     <form class="auth-card" id="authForm">
-      <h2>Pipeline CRM</h2>
+      <h2>Bidzo CRM</h2>
       <div class="sub2">Sign in with the account your admin created for you.</div>
       <label>Email<input id="authEmail" type="email" autocomplete="username" required /></label>
       <label>Password<input id="authPassword" type="password" autocomplete="current-password" required /></label>
@@ -78,7 +78,7 @@
     </div>
   </div>
   <div id="appRoot" hidden>
-  <header><div><h1>Pipeline CRM</h1><div class="sub">A simple shared-sales workflow</div><div id="syncBadge" class="offline"><span class="dot"></span><span id="syncText">Saved on this device only</span></div></div><div class="header-actions"><button type="button" class="identity-chip" id="identityChip" onclick="showIdentityGate()">Who am I?</button><button type="button" class="secondary icon-btn" onclick="openNotifs()">🔔<span class="badge" id="notifBadge" hidden>0</span></button></div></header>
+  <header><div><h1>Bidzo CRM</h1><div class="sub">A simple shared-sales workflow</div><div id="syncBadge" class="offline"><span class="dot"></span><span id="syncText">Saved on this device only</span></div></div><div class="header-actions"><button type="button" class="identity-chip" id="identityChip" onclick="showIdentityGate()">Who am I?</button><button type="button" class="secondary icon-btn" onclick="openNotifs()">🔔<span class="badge" id="notifBadge" hidden>0</span></button></div></header>
   <nav class="tabs">
     <button type="button" class="tab active" data-tab="leads" onclick="switchTab('leads')">Leads</button>
     <button type="button" class="tab icon-btn" data-tab="chat" onclick="switchTab('chat')">Team Chat<span class="badge" id="chatTabBadge" hidden>0</span></button>
