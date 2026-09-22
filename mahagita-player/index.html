@@ -1,0 +1,849 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mahagita Player</title>
+
+<!-- PWA / iOS home-screen app behavior -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#c8722a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mahagita">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" href="./icon-192.png">
+
+<style>
+  :root{
+    --ink:#2b2420;
+    --ink-soft:#6b5e54;
+    --paper:#f7f1e6;
+    --paper-raised:#fffdf8;
+    --line:#e2d5c0;
+    --saffron:#c8722a;
+    --saffron-soft:#e9c9a0;
+    --saffron-deep:#9a4f16;
+    --track:#e6dac2;
+    --danger:#b3452f;
+    color-scheme: light;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#f0e6d8;
+      --ink-soft:#b9a998;
+      --paper:#1c1712;
+      --paper-raised:#26201a;
+      --line:#3a2f24;
+      --saffron:#e08a3e;
+      --saffron-soft:#4a3420;
+      --saffron-deep:#f3a662;
+      --track:#332a20;
+      --danger:#e07a5f;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#f0e6d8;
+    --ink-soft:#b9a998;
+    --paper:#1c1712;
+    --paper-raised:#26201a;
+    --line:#3a2f24;
+    --saffron:#e08a3e;
+    --saffron-soft:#4a3420;
+    --saffron-deep:#f3a662;
+    --track:#332a20;
+    --danger:#e07a5f;
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  html, body{ height:100%; margin:0; }
+  [hidden]{ display:none !important; }
+  img{ max-width:100%; }
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
+    font-size:14px;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+
+  h1,h2,.serif{
+    font-family:'Fraunces', Georgia, 'Times New Roman', serif;
+  }
+
+  header{
+    padding:18px 20px 14px;
+    padding-top: calc(18px + env(safe-area-inset-top, 0px));
+    border-bottom:1px solid var(--line);
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:12px;
+    flex-shrink:0;
+  }
+  header .title{
+    font-size:1.35rem;
+    font-weight:600;
+    letter-spacing:0.01em;
+  }
+  header .title .sub{
+    display:block;
+    font-family:'Source Sans 3', sans-serif;
+    font-size:0.72rem;
+    color:var(--ink-soft);
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    margin-top:3px;
+  }
+  #addBtn{
+    border:1px solid var(--saffron);
+    background:transparent;
+    color:var(--saffron-deep);
+    font-family:'Source Sans 3', sans-serif;
+    font-size:0.82rem;
+    font-weight:600;
+    padding:8px 14px;
+    border-radius:99px;
+    cursor:pointer;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  #addBtn:active{ background:var(--saffron-soft); }
+
+  main{
+    flex:1;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:110px;
+  }
+
+  #empty{
+    padding:60px 24px;
+    text-align:center;
+    color:var(--ink-soft);
+  }
+  #empty .glyph{
+    font-family:'Fraunces', serif;
+    font-size:2.6rem;
+    color:var(--saffron-soft);
+    margin-bottom:6px;
+  }
+  #empty p{ line-height:1.55; max-width:320px; margin:6px auto; font-size:0.95rem; }
+  #empty .cta{
+    margin-top:18px;
+    display:inline-block;
+    border:1px solid var(--saffron);
+    color:var(--saffron-deep);
+    padding:10px 20px;
+    border-radius:99px;
+    font-weight:600;
+    cursor:pointer;
+    font-size:0.9rem;
+  }
+
+  #progress-wrap{
+    padding:14px 20px 4px;
+    display:none;
+  }
+  #progress-wrap.show{ display:block; }
+  #progress-label{
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+    display:flex;
+    justify-content:space-between;
+  }
+  #progress-bar-outer{
+    height:5px;
+    background:var(--track);
+    border-radius:99px;
+    overflow:hidden;
+  }
+  #progress-bar-inner{
+    height:100%;
+    background:var(--saffron);
+    width:0%;
+    transition:width 0.2s;
+  }
+
+  ul#list{
+    list-style:none;
+    margin:0;
+    padding:6px 10px 0;
+  }
+  li.ep{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 10px;
+    border-radius:12px;
+    cursor:pointer;
+    border:1px solid transparent;
+  }
+  li.ep:active{ background:var(--paper-raised); }
+  li.ep.playing{
+    background:var(--paper-raised);
+    border-color:var(--saffron-soft);
+  }
+  .ep-num{
+    font-family:'Fraunces', serif;
+    font-size:0.95rem;
+    color:var(--saffron);
+    width:30px;
+    text-align:right;
+    flex-shrink:0;
+    font-variant-numeric: tabular-nums;
+  }
+  .ep-icon{
+    width:38px;height:38px;
+    border-radius:50%;
+    background:var(--saffron-soft);
+    color:var(--saffron-deep);
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+    font-size:1rem;
+  }
+  li.ep.playing .ep-icon{
+    background:var(--saffron);
+    color:var(--paper-raised);
+  }
+  .ep-body{
+    flex:1;
+    min-width:0;
+  }
+  .ep-name{
+    font-size:0.92rem;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .ep-meta{
+    font-size:0.74rem;
+    color:var(--ink-soft);
+    margin-top:2px;
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  .ep-meta .mini-track{
+    width:60px;height:3px;background:var(--track);border-radius:99px;overflow:hidden;flex-shrink:0;
+  }
+  .ep-meta .mini-fill{
+    height:100%;background:var(--saffron);
+  }
+  .ep-meta .done{ color:var(--saffron-deep); font-weight:600; }
+  .ep-del{
+    flex-shrink:0;
+    width:30px;height:30px;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--ink-soft);
+    font-size:1.1rem;
+    border-radius:50%;
+  }
+  .ep-del:active{ background:var(--track); }
+
+  #player{
+    position:fixed;
+    left:0;right:0;bottom:0;
+    background:var(--paper-raised);
+    border-top:1px solid var(--line);
+    padding:10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+    display:none;
+    flex-direction:column;
+    gap:8px;
+  }
+  #player.show{ display:flex; }
+  #player-top{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  #player-title{
+    flex:1;
+    min-width:0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    font-size:0.88rem;
+    font-weight:600;
+  }
+  #player-time{
+    font-size:0.74rem;
+    color:var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+    flex-shrink:0;
+  }
+  #seek{
+    -webkit-appearance:none;
+    appearance:none;
+    width:100%;
+    height:4px;
+    border-radius:99px;
+    background:var(--track);
+    outline:none;
+    margin:0;
+  }
+  #seek::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:14px;height:14px;border-radius:50%;
+    background:var(--saffron);
+    cursor:pointer;
+  }
+  #seek::-moz-range-thumb{
+    width:14px;height:14px;border-radius:50%;
+    background:var(--saffron);
+    border:none;
+    cursor:pointer;
+  }
+  #controls{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:28px;
+  }
+  #controls button{
+    background:none;
+    border:none;
+    color:var(--ink);
+    cursor:pointer;
+    padding:4px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  #playPause{
+    width:52px;height:52px;
+    border-radius:50%;
+    background:var(--saffron);
+    color:var(--paper-raised);
+  }
+  #playPause svg{ width:22px;height:22px; }
+  .skip svg{ width:24px;height:24px; }
+  .rate-btn{
+    font-size:0.78rem;
+    font-weight:700;
+    border:1px solid var(--line);
+    border-radius:99px;
+    padding:4px 9px;
+    color:var(--ink-soft);
+    min-width:44px;
+  }
+
+  #fileInput{ display:none; }
+
+  .sr-only{
+    position:absolute; width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);
+  }
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header>
+  <div class="title">Mahagita
+    <span class="sub">Ashtavakra · Osho</span>
+  </div>
+  <button id="addBtn">+ Add episodes</button>
+</header>
+
+<div id="progress-wrap">
+  <div id="progress-label"><span id="progress-count"></span><span id="progress-pct"></span></div>
+  <div id="progress-bar-outer"><div id="progress-bar-inner"></div></div>
+</div>
+
+<main>
+  <div id="empty">
+    <div class="glyph">॥</div>
+    <p><strong>No episodes yet.</strong> Upload your Ashtavakra Mahagita files once — they stay stored on this device, in order, with your place remembered automatically.</p>
+    <div class="cta" id="emptyAdd">Choose files</div>
+  </div>
+  <ul id="list"></ul>
+</main>
+
+<div id="player">
+  <div id="player-top">
+    <div id="player-title">—</div>
+    <div id="player-time">0:00 / 0:00</div>
+  </div>
+  <input type="range" id="seek" min="0" max="100" value="0" step="0.1">
+  <div id="controls">
+    <button class="rate-btn" id="rateBtn">1.0×</button>
+    <button class="skip" id="backBtn" aria-label="Back 15 seconds">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+    </button>
+    <button id="playPause" aria-label="Play">
+      <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      <svg id="pauseIcon" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>
+    </button>
+    <button class="skip" id="fwdBtn" aria-label="Forward 30 seconds">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg>
+    </button>
+    <div style="width:44px"></div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="audio/*" multiple>
+<audio id="audio" preload="metadata"></audio>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- register service worker for offline app-shell caching ----------
+  if("serviceWorker" in navigator){
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("./sw.js").catch(function(){});
+    });
+  }
+
+  // ---------- IndexedDB: stores the actual audio blobs on this device ----------
+  var DB_NAME = "mahagita-player";
+  var DB_VERSION = 1;
+  var STORE = "episodes";
+  var db = null;
+
+  function openDB(){
+    return new Promise(function(resolve, reject){
+      var req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = function(e){
+        var d = e.target.result;
+        if(!d.objectStoreNames.contains(STORE)){
+          var store = d.createObjectStore(STORE, { keyPath: "id" });
+          store.createIndex("order", "order", { unique:false });
+        }
+      };
+      req.onsuccess = function(e){ resolve(e.target.result); };
+      req.onerror = function(e){ reject(e); };
+    });
+  }
+
+  function idbAll(){
+    return new Promise(function(resolve, reject){
+      if(!db){ resolve([]); return; }
+      try{
+        var tx = db.transaction(STORE, "readonly");
+        var store = tx.objectStore(STORE);
+        var req = store.getAll();
+        req.onsuccess = function(){ resolve(req.result || []); };
+        req.onerror = function(){ reject(req.error); };
+      }catch(err){ reject(err); }
+    });
+  }
+
+  function idbPut(rec){
+    return new Promise(function(resolve, reject){
+      try{
+        var tx = db.transaction(STORE, "readwrite");
+        tx.objectStore(STORE).put(rec);
+        tx.oncomplete = function(){ resolve(); };
+        tx.onerror = function(){ reject(tx.error); };
+      }catch(err){ reject(err); }
+    });
+  }
+
+  function idbDelete(id){
+    return new Promise(function(resolve, reject){
+      try{
+        var tx = db.transaction(STORE, "readwrite");
+        tx.objectStore(STORE).delete(id);
+        tx.oncomplete = function(){ resolve(); };
+        tx.onerror = function(){ reject(tx.error); };
+      }catch(err){ reject(err); }
+    });
+  }
+
+  // ---------- localStorage: lightweight per-viewer conveniences ----------
+  function lsGet(key, fallback){
+    try{
+      var v = localStorage.getItem(key);
+      return v === null ? fallback : JSON.parse(v);
+    }catch(e){ return fallback; }
+  }
+  function lsSet(key, val){
+    try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){}
+  }
+
+  // ---------- state ----------
+  var episodes = [];        // [{id, name, order, size, position, duration, done}]
+  var blobUrls = {};        // id -> object URL (created lazily)
+  var currentId = lsGet("mahagita:lastPlayed", null);
+  var rates = [1, 1.25, 1.5, 1.75, 2, 0.75];
+  var rateIdx = lsGet("mahagita:rateIdx", 0);
+  var saveTimer = null;
+
+  var $list = document.getElementById("list");
+  var $empty = document.getElementById("empty");
+  var $player = document.getElementById("player");
+  var $audio = document.getElementById("audio");
+  var $title = document.getElementById("player-title");
+  var $time = document.getElementById("player-time");
+  var $seek = document.getElementById("seek");
+  var $playPause = document.getElementById("playPause");
+  var $playIcon = document.getElementById("playIcon");
+  var $pauseIcon = document.getElementById("pauseIcon");
+  var $rateBtn = document.getElementById("rateBtn");
+  var $fileInput = document.getElementById("fileInput");
+  var $progressWrap = document.getElementById("progress-wrap");
+  var $progressCount = document.getElementById("progress-count");
+  var $progressPct = document.getElementById("progress-pct");
+  var $progressInner = document.getElementById("progress-bar-inner");
+
+  function fmtTime(s){
+    if(!isFinite(s) || s < 0) s = 0;
+    s = Math.floor(s);
+    var m = Math.floor(s/60);
+    var sec = s%60;
+    return m + ":" + (sec<10?"0":"") + sec;
+  }
+
+  function naturalName(name){
+    // strip extension for display
+    return name.replace(/\.[^/.]+$/, "");
+  }
+
+  function sortEpisodes(){
+    episodes.sort(function(a,b){
+      // try to detect leading episode numbers for natural sort, else fall back to stored order
+      var na = a.name.match(/(\d+)/);
+      var nb = b.name.match(/(\d+)/);
+      if(na && nb){
+        var diff = parseInt(na[1],10) - parseInt(nb[1],10);
+        if(diff !== 0) return diff;
+      }
+      return a.order - b.order;
+    });
+  }
+
+  function render(){
+    if(episodes.length === 0){
+      $empty.style.display = "block";
+      $list.innerHTML = "";
+      return;
+    }
+    $empty.style.display = "none";
+    sortEpisodes();
+
+    var html = "";
+    for(var i=0;i<episodes.length;i++){
+      var ep = episodes[i];
+      var pct = ep.duration ? Math.min(100, (ep.position/ep.duration)*100) : 0;
+      var isPlaying = ep.id === currentId;
+      var metaText;
+      if(ep.done){
+        metaText = '<span class="done">✓ Finished</span>';
+      } else if(ep.position > 3){
+        metaText = '<span class="mini-track"><span class="mini-fill" style="width:'+pct.toFixed(0)+'%"></span></span><span>'+fmtTime(ep.position)+'</span>';
+      } else {
+        metaText = '<span>Not started</span>';
+      }
+      html += '<li class="ep'+(isPlaying?' playing':'')+'" data-id="'+ep.id+'">'+
+        '<div class="ep-icon">'+(isPlaying?'♫':'')+'</div>'+
+        '<div class="ep-body">'+
+          '<div class="ep-name">'+escapeHtml(naturalName(ep.name))+'</div>'+
+          '<div class="ep-meta">'+metaText+'</div>'+
+        '</div>'+
+        '<div class="ep-del" data-del="'+ep.id+'">✕</div>'+
+      '</li>';
+    }
+    $list.innerHTML = html;
+
+    // overall progress bar
+    var finished = episodes.filter(function(e){return e.done;}).length;
+    if(episodes.length > 1){
+      $progressWrap.classList.add("show");
+      $progressCount.textContent = finished + " of " + episodes.length + " finished";
+      $progressPct.textContent = Math.round((finished/episodes.length)*100) + "%";
+      $progressInner.style.width = (finished/episodes.length*100) + "%";
+    } else {
+      $progressWrap.classList.remove("show");
+    }
+  }
+
+  function escapeHtml(s){
+    var d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  // ---------- playback ----------
+  function getBlobUrl(ep){
+    if(blobUrls[ep.id]) return blobUrls[ep.id];
+    var url = URL.createObjectURL(ep.blob);
+    blobUrls[ep.id] = url;
+    return url;
+  }
+
+  function updateMediaSession(ep){
+    if(!("mediaSession" in navigator)) return;
+    try{
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: naturalName(ep.name),
+        artist: "Ashtavakra Mahagita",
+        album: "Osho"
+      });
+      navigator.mediaSession.setActionHandler("play", function(){ $audio.play().catch(function(){}); });
+      navigator.mediaSession.setActionHandler("pause", function(){ $audio.pause(); });
+      navigator.mediaSession.setActionHandler("seekbackward", function(){ $audio.currentTime = Math.max(0, $audio.currentTime - 15); });
+      navigator.mediaSession.setActionHandler("seekforward", function(){ $audio.currentTime = Math.min($audio.duration || Infinity, $audio.currentTime + 30); });
+      navigator.mediaSession.setActionHandler("previoustrack", playPrev);
+      navigator.mediaSession.setActionHandler("nexttrack", playNext);
+    }catch(e){}
+  }
+
+  function playEpisode(id){
+    var ep = episodes.find(function(e){ return e.id === id; });
+    if(!ep) return;
+
+    if(currentId && currentId !== id){
+      persistPosition(true);
+    }
+
+    currentId = id;
+    lsSet("mahagita:lastPlayed", currentId);
+
+    $audio.src = getBlobUrl(ep);
+    $audio.playbackRate = rates[rateIdx];
+    $rateBtn.textContent = rates[rateIdx] + "×";
+
+    var resumeAt = ep.position || 0;
+    var startPlayback = function(){
+      if(resumeAt > 0 && resumeAt < ($audio.duration - 2 || Infinity)){
+        $audio.currentTime = resumeAt;
+      }
+      $audio.play().catch(function(){});
+    };
+    $audio.addEventListener("loadedmetadata", startPlayback, { once:true });
+
+    $player.classList.add("show");
+    $title.textContent = naturalName(ep.name);
+    updateMediaSession(ep);
+    render();
+  }
+
+  function persistPosition(immediate){
+    if(!currentId) return;
+    var ep = episodes.find(function(e){ return e.id === currentId; });
+    if(!ep) return;
+    var pos = $audio.currentTime || 0;
+    var dur = $audio.duration || ep.duration || 0;
+    ep.position = pos;
+    if(dur) ep.duration = dur;
+    ep.done = dur > 0 && pos >= dur - 3;
+
+    var doSave = function(){
+      idbPut({
+        id: ep.id, name: ep.name, order: ep.order,
+        size: ep.size, position: ep.position, duration: ep.duration,
+        done: ep.done, blob: ep.blob
+      }).catch(function(){});
+    };
+    if(immediate){ doSave(); }
+    else {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(doSave, 800);
+    }
+  }
+
+  $audio.addEventListener("timeupdate", function(){
+    if($audio.duration){
+      $seek.max = $audio.duration;
+      $seek.value = $audio.currentTime;
+      $time.textContent = fmtTime($audio.currentTime) + " / " + fmtTime($audio.duration);
+      if("mediaSession" in navigator && navigator.mediaSession.setPositionState){
+        try{
+          navigator.mediaSession.setPositionState({
+            duration: $audio.duration,
+            playbackRate: $audio.playbackRate,
+            position: $audio.currentTime
+          });
+        }catch(e){}
+      }
+    }
+    persistPosition(false);
+    // live-update the row's mini progress without full re-render for smoothness
+    updateRowProgress();
+  });
+
+  $audio.addEventListener("play", function(){
+    $playIcon.style.display = "none";
+    $pauseIcon.style.display = "block";
+    $playPause.setAttribute("aria-label","Pause");
+    if("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
+  });
+  $audio.addEventListener("pause", function(){
+    $playIcon.style.display = "block";
+    $pauseIcon.style.display = "none";
+    $playPause.setAttribute("aria-label","Play");
+    if("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
+    persistPosition(true);
+  });
+  $audio.addEventListener("ended", function(){
+    persistPosition(true);
+    render();
+    playNext();
+  });
+
+  function updateRowProgress(){
+    if(!currentId) return;
+    var ep = episodes.find(function(e){ return e.id === currentId; });
+    if(!ep || !$audio.duration) return;
+    var row = $list.querySelector('li[data-id="'+cssEscape(currentId)+'"] .mini-fill');
+    if(row){
+      var pct = Math.min(100, ($audio.currentTime/$audio.duration)*100);
+      row.style.width = pct.toFixed(1) + "%";
+    }
+    var timeEl = $list.querySelector('li[data-id="'+cssEscape(currentId)+'"] .ep-meta span:last-child');
+    if(timeEl && !timeEl.classList.contains('done')){
+      timeEl.textContent = fmtTime($audio.currentTime);
+    }
+  }
+  function cssEscape(s){
+    return String(s).replace(/[^a-zA-Z0-9_-]/g, "\\$&");
+  }
+
+  function playNext(){
+    sortEpisodes();
+    var idx = episodes.findIndex(function(e){ return e.id === currentId; });
+    if(idx >= 0 && idx < episodes.length - 1){
+      playEpisode(episodes[idx+1].id);
+    }
+  }
+  function playPrev(){
+    sortEpisodes();
+    var idx = episodes.findIndex(function(e){ return e.id === currentId; });
+    if(idx > 0){
+      playEpisode(episodes[idx-1].id);
+    }
+  }
+
+  $playPause.addEventListener("click", function(){
+    if(!currentId && episodes.length){
+      // resume most recent or first
+      var target = episodes.find(function(e){ return e.id === lsGet("mahagita:lastPlayed", null); }) || episodes[0];
+      playEpisode(target.id);
+      return;
+    }
+    if($audio.paused){ $audio.play().catch(function(){}); }
+    else { $audio.pause(); }
+  });
+
+  document.getElementById("backBtn").addEventListener("click", function(){
+    $audio.currentTime = Math.max(0, $audio.currentTime - 15);
+  });
+  document.getElementById("fwdBtn").addEventListener("click", function(){
+    $audio.currentTime = Math.min($audio.duration || Infinity, $audio.currentTime + 30);
+  });
+  $seek.addEventListener("input", function(){
+    $audio.currentTime = parseFloat($seek.value);
+  });
+  $rateBtn.addEventListener("click", function(){
+    rateIdx = (rateIdx + 1) % rates.length;
+    lsSet("mahagita:rateIdx", rateIdx);
+    $audio.playbackRate = rates[rateIdx];
+    $rateBtn.textContent = rates[rateIdx] + "×";
+  });
+
+  // ---------- list interactions ----------
+  $list.addEventListener("click", function(e){
+    var del = e.target.closest("[data-del]");
+    if(del){
+      e.stopPropagation();
+      var id = del.getAttribute("data-del");
+      removeEpisode(id);
+      return;
+    }
+    var li = e.target.closest("li.ep");
+    if(li){
+      var epId = li.getAttribute("data-id");
+      if(epId === currentId){
+        // toggle play/pause on tap of currently-playing row
+        if($audio.paused) $audio.play().catch(function(){});
+        else $audio.pause();
+      } else {
+        playEpisode(epId);
+      }
+    }
+  });
+
+  function removeEpisode(id){
+    var wasPlaying = id === currentId;
+    if(wasPlaying){
+      $audio.pause();
+      $audio.removeAttribute("src");
+      $audio.load();
+      $player.classList.remove("show");
+      currentId = null;
+      lsSet("mahagita:lastPlayed", null);
+    }
+    if(blobUrls[id]){ URL.revokeObjectURL(blobUrls[id]); delete blobUrls[id]; }
+    episodes = episodes.filter(function(e){ return e.id !== id; });
+    idbDelete(id).catch(function(){});
+    render();
+  }
+
+  // ---------- uploading ----------
+  document.getElementById("addBtn").addEventListener("click", function(){ $fileInput.click(); });
+  document.getElementById("emptyAdd").addEventListener("click", function(){ $fileInput.click(); });
+
+  $fileInput.addEventListener("change", function(){
+    var files = Array.prototype.slice.call($fileInput.files || []);
+    if(!files.length) return;
+    var startOrder = episodes.length;
+    var existingNames = {};
+    episodes.forEach(function(e){ existingNames[e.name] = true; });
+
+    var tasks = files
+      .filter(function(f){ return !existingNames[f.name]; })
+      .map(function(f, i){
+        var id = "ep-" + Date.now() + "-" + i + "-" + Math.random().toString(36).slice(2,8);
+        var rec = {
+          id: id, name: f.name, order: startOrder + i,
+          size: f.size, position: 0, duration: 0, done: false, blob: f
+        };
+        episodes.push(rec);
+        return idbPut(rec);
+      });
+
+    Promise.all(tasks).then(function(){
+      render();
+    });
+
+    $fileInput.value = "";
+  });
+
+  // ---------- load ----------
+  openDB().then(function(d){
+    db = d;
+    return idbAll();
+  }).then(function(records){
+    episodes = records.map(function(r){
+      return {
+        id:r.id, name:r.name, order:r.order, size:r.size,
+        position:r.position||0, duration:r.duration||0, done:!!r.done,
+        blob:r.blob
+      };
+    });
+    render();
+  }).catch(function(err){
+    console.error("DB init failed", err);
+    render();
+  });
+
+  // save position if the page is being closed/backgrounded
+  document.addEventListener("visibilitychange", function(){
+    if(document.visibilityState === "hidden") persistPosition(true);
+  });
+  window.addEventListener("pagehide", function(){ persistPosition(true); });
+
+})();
+</script>
+</body>
+</html>
