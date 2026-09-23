@@ -193,6 +193,7 @@
     background:var(--saffron);
     color:var(--paper-raised);
   }
+  .ep-num svg{ width:18px; height:18px; }
   .ep-body{
     flex:1;
     min-width:0;
@@ -360,6 +361,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
     </button>
     <button id="playPause" aria-label="Play">
+      <svg id="loadIcon" class="spinning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><path d="M12 3a9 9 0 1 1-9 9"/></svg>
       <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
       <svg id="pauseIcon" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>
     </button>
@@ -503,6 +505,14 @@
   episodes.forEach(function(ep){ byId[ep.id] = ep; });
   var blobUrls = {};         // id -> object URL for cached (offline) blobs
   var currentId = lsGet("mahagita:lastPlayed", null);
+  // currentId is restored from storage so the UI can highlight it and offer
+  // "Resume" immediately, but that alone does NOT mean the audio element has
+  // anything loaded yet. audioLoaded/loading track the real player state so
+  // we don't confuse "this is the remembered episode" with "this is actually
+  // in the player and ready to play" (that mismatch was the resume bug).
+  var audioLoaded = false;
+  var loading = false;
+  var loadToken = 0;
   var rates = [1, 1.25, 1.5, 1.75, 2, 0.75];
   var rateIdx = lsGet("mahagita:rateIdx", 0);
   var saveTimer = null;
@@ -515,6 +525,7 @@
   var $time = document.getElementById("player-time");
   var $seek = document.getElementById("seek");
   var $playPause = document.getElementById("playPause");
+  var $loadIcon = document.getElementById("loadIcon");
   var $playIcon = document.getElementById("playIcon");
   var $pauseIcon = document.getElementById("pauseIcon");
   var $rateBtn = document.getElementById("rateBtn");
@@ -536,14 +547,29 @@
   var cachedIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>';
   var spinnerIcon = '<svg class="spinning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 1-9 9"/></svg>';
 
+  // shows a spinner in the big play button while an episode is loading/buffering
+  function setPlayButtonState(state){
+    $loadIcon.style.display = state === "loading" ? "block" : "none";
+    $playIcon.style.display = state === "play" ? "block" : "none";
+    $pauseIcon.style.display = state === "pause" ? "block" : "none";
+  }
+
   function render(){
     var html = "";
     for(var i=0;i<episodes.length;i++){
       var ep = episodes[i];
       var pct = ep.duration ? Math.min(100, (ep.position/ep.duration)*100) : 0;
       var isPlaying = ep.id === currentId;
+      // Only show the loading state while a fetch is actually in flight —
+      // NOT just because audioLoaded happens to be false, which is also
+      // true for the ordinary "restored from storage, not yet tapped" state
+      // right after opening the app (that state should show the normal
+      // saved position, not a permanent "Loading…").
+      var isLoadingRow = isPlaying && loading;
       var metaText;
-      if(ep.done){
+      if(isLoadingRow){
+        metaText = '<span>Loading…</span>';
+      } else if(ep.done){
         metaText = '<span class="done">✓ Finished</span>';
       } else if(ep.position > 3){
         metaText = '<span class="mini-track"><span class="mini-fill" style="width:'+pct.toFixed(0)+'%"></span></span><span>'+fmtTime(ep.position)+'</span>';
@@ -556,9 +582,10 @@
       var offlineBtnClass = "ep-offline" + (ep.cached ? " cached" : "");
       var offlineIcon = downloadingIds[ep.id] ? spinnerIcon : (ep.cached ? cachedIcon : downloadIcon);
       var offlineLabel = ep.cached ? "Remove offline copy" : "Save for offline";
+      var numContent = isLoadingRow ? spinnerIcon : (isPlaying ? '♫' : ep.num);
 
       html += '<li class="ep'+(isPlaying?' playing':'')+'" data-id="'+ep.id+'">'+
-        '<div class="ep-num">'+(isPlaying ? '♫' : ep.num)+'</div>'+
+        '<div class="ep-num">'+numContent+'</div>'+
         '<div class="ep-body">'+
           '<div class="ep-name">'+ep.name+'</div>'+
           '<div class="ep-meta">'+metaText+'</div>'+
@@ -637,6 +664,14 @@
     }catch(e){}
   }
 
+  // Whether tapping `id` should (re)load it into the player, vs. just
+  // toggling play/pause on what's already loaded. True for a different
+  // episode, AND for the current one if it was never actually loaded this
+  // session (e.g. right after reopening the app) or its load failed.
+  function shouldLoad(id){
+    return id !== currentId || (!audioLoaded && !loading);
+  }
+
   function playEpisode(id){
     var ep = byId[id];
     if(!ep) return;
@@ -644,30 +679,84 @@
     if(currentId && currentId !== id) persistPosition(true);
 
     currentId = id;
+    audioLoaded = false;
+    loading = true;
+    loadToken++;
+    var myToken = loadToken;
+
     lsSet("mahagita:lastPlayed", currentId);
     $player.classList.add("show");
     $title.textContent = ep.name;
+    $time.textContent = "Loading…";
+    setPlayButtonState("loading");
     updateMediaSession(ep);
     render();
 
-    sourceFor(ep).then(function(src){
+    function attach(src){
+      if(myToken !== loadToken) return; // superseded by a newer tap elsewhere
+
       $audio.src = src;
       $audio.playbackRate = rates[rateIdx];
       $rateBtn.textContent = rates[rateIdx] + "×";
 
       var resumeAt = ep.position || 0;
-      var startPlayback = function(){
-        if(resumeAt > 0 && resumeAt < ($audio.duration - 2 || Infinity)){
+      var seeked = false;
+
+      function onMeta(){
+        if(myToken !== loadToken) return;
+        audioLoaded = true;
+        loading = false;
+        $audio.removeEventListener("error", onError);
+        if(!seeked && resumeAt > 0 && resumeAt < ($audio.duration - 2 || Infinity)){
+          seeked = true;
           $audio.currentTime = resumeAt;
         }
-        $audio.play().catch(function(){});
-      };
-      $audio.addEventListener("loadedmetadata", startPlayback, { once:true });
-    });
+        render();
+      }
+      function onError(){
+        if(myToken !== loadToken) return;
+        audioLoaded = false;
+        loading = false;
+        $audio.removeEventListener("loadedmetadata", onMeta);
+        $time.textContent = "Couldn't load — tap to retry";
+        setPlayButtonState("play");
+        render();
+      }
+
+      $audio.addEventListener("loadedmetadata", onMeta, { once:true });
+      $audio.addEventListener("error", onError, { once:true });
+
+      // Call play() itself, not load(): with preload="none" nothing starts
+      // fetching until playback is requested, so waiting for loadedmetadata
+      // before calling play() would deadlock forever (this was the actual
+      // bug — the player looked like it remembered the position but could
+      // never start, because it was waiting on an event that never fires).
+      // Seeking to the resume position happens moments later once
+      // loadedmetadata does fire, above.
+      $audio.play().catch(function(){
+        setPlayButtonState("play");
+      });
+    }
+
+    if(ep.cached){
+      sourceFor(ep).then(attach); // async IndexedDB lookup for the offline blob
+    } else {
+      attach(ep.url); // stream directly — stays synchronous with the tap so
+                       // iOS Safari's autoplay-needs-a-direct-gesture rule
+                       // isn't broken by an extra async hop
+    }
   }
 
+  var lastSaveAt = 0;
+  var SAVE_INTERVAL_MS = 2000;
+
   function persistPosition(immediate){
-    if(!currentId) return;
+    // Only save when this session actually has real playback state for
+    // currentId — otherwise (e.g. the app was restored to a remembered
+    // episode but never tapped before being closed again) $audio.currentTime
+    // is just 0 from an empty player, and saving it would silently wipe out
+    // a real saved position from a previous session.
+    if(!currentId || !audioLoaded) return;
     var ep = byId[currentId];
     if(!ep) return;
     var pos = $audio.currentTime || 0;
@@ -676,10 +765,28 @@
     if(dur) ep.duration = dur;
     ep.done = dur > 0 && pos >= dur - 3;
 
-    if(immediate){ saveProgress(ep); }
-    else {
+    if(immediate){
       clearTimeout(saveTimer);
-      saveTimer = setTimeout(function(){ saveProgress(ep); }, 800);
+      saveTimer = null;
+      saveProgress(ep);
+      lastSaveAt = Date.now();
+      return;
+    }
+
+    // Throttled (not debounced): timeupdate fires several times a second
+    // during playback, so a plain debounce that resets on every call would
+    // never actually elapse and nothing would get saved until pause/close.
+    var now = Date.now();
+    var elapsed = now - lastSaveAt;
+    if(elapsed >= SAVE_INTERVAL_MS){
+      saveProgress(ep);
+      lastSaveAt = now;
+    } else if(!saveTimer){
+      saveTimer = setTimeout(function(){
+        saveTimer = null;
+        saveProgress(ep);
+        lastSaveAt = Date.now();
+      }, SAVE_INTERVAL_MS - elapsed);
     }
   }
 
@@ -703,14 +810,12 @@
   });
 
   $audio.addEventListener("play", function(){
-    $playIcon.style.display = "none";
-    $pauseIcon.style.display = "block";
+    setPlayButtonState("pause");
     $playPause.setAttribute("aria-label","Pause");
     if("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
   });
   $audio.addEventListener("pause", function(){
-    $playIcon.style.display = "block";
-    $pauseIcon.style.display = "none";
+    setPlayButtonState("play");
     $playPause.setAttribute("aria-label","Play");
     if("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
     persistPosition(true);
@@ -745,11 +850,9 @@
   }
 
   $playPause.addEventListener("click", function(){
-    if(!currentId){
-      var target = byId[lsGet("mahagita:lastPlayed", null)] || episodes[0];
-      playEpisode(target.id);
-      return;
-    }
+    var target = byId[currentId] || episodes[0];
+    if(shouldLoad(target.id)){ playEpisode(target.id); return; }
+    if(!audioLoaded) return; // already loading this one; ignore extra taps
     if($audio.paused){ $audio.play().catch(function(){}); }
     else { $audio.pause(); }
   });
@@ -772,11 +875,11 @@
 
   // jump straight to the last-played episode and scroll it into view
   $jumpBtn.addEventListener("click", function(){
-    var target = byId[currentId] || byId[lsGet("mahagita:lastPlayed", null)] || episodes[0];
+    var target = byId[currentId] || episodes[0];
     var row = $list.querySelector('li[data-id="'+cssEscape(target.id)+'"]');
     if(row) row.scrollIntoView({ behavior:"smooth", block:"center" });
-    if(target.id !== currentId) playEpisode(target.id);
-    else if($audio.paused) $audio.play().catch(function(){});
+    if(shouldLoad(target.id)){ playEpisode(target.id); return; }
+    if(audioLoaded && $audio.paused) $audio.play().catch(function(){});
   });
 
   // ---------- list interactions ----------
@@ -790,12 +893,10 @@
     var li = e.target.closest("li.ep");
     if(li){
       var epId = li.getAttribute("data-id");
-      if(epId === currentId){
-        if($audio.paused) $audio.play().catch(function(){});
-        else $audio.pause();
-      } else {
-        playEpisode(epId);
-      }
+      if(shouldLoad(epId)){ playEpisode(epId); return; }
+      if(!audioLoaded) return; // already loading this one; ignore extra taps
+      if($audio.paused) $audio.play().catch(function(){});
+      else $audio.pause();
     }
   });
 
