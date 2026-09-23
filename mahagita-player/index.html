@@ -14,6 +14,13 @@
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="icon" href="./icon-192.png">
 
+<!-- Warm up the connection to Osho's server as soon as the app opens, so
+     the DNS/TCP/TLS handshake is already done by the time you tap an
+     episode — shaves a real chunk off the "why is this slow to start"
+     delay, without downloading anything. -->
+<link rel="preconnect" href="https://oshoworld.com">
+<link rel="dns-prefetch" href="https://oshoworld.com">
+
 <style>
   :root{
     --ink:#2b2420;
@@ -219,17 +226,6 @@
     height:100%;background:var(--saffron);
   }
   .ep-meta .done{ color:var(--saffron-deep); font-weight:600; }
-  .ep-meta .offline-tag{ color:var(--saffron-deep); }
-  .ep-offline{
-    flex-shrink:0;
-    width:32px;height:32px;
-    display:flex;align-items:center;justify-content:center;
-    color:var(--ink-soft);
-    border-radius:50%;
-  }
-  .ep-offline svg{ width:18px;height:18px; }
-  .ep-offline.cached{ color:var(--saffron-deep); }
-  .ep-offline:active{ background:var(--track); }
 
   #player{
     position:fixed;
@@ -338,7 +334,7 @@
   <button id="jumpBtn">Resume</button>
 </header>
 
-<div id="net-note">You're offline. Episodes marked <strong>✓ Saved</strong> below will still play — others need a connection to stream.</div>
+<div id="net-note">You're offline right now, so streaming won't work until you're back on wifi or cellular data.</div>
 
 <div id="progress-wrap">
   <div id="progress-label"><span id="progress-count"></span><span id="progress-pct"></span></div>
@@ -382,6 +378,15 @@
   // Confirmed URL pattern (each supports HTTP range requests, so playback
   // streams rather than requiring a full download):
   // https://oshoworld.com/wp-content/uploads/2020/11/Hindi%20Audio/OSHO-Maha_Geeta_NN.mp3
+  //
+  // NOTE: their server does not send CORS headers, so a plain <audio src>
+  // can stream/play these files fine (media playback never needed CORS),
+  // but fetch() cannot read the bytes to store them locally — confirmed
+  // directly (a fetch() to this host is rejected outright, and even
+  // mode:"no-cors" only returns an unreadable opaque response). That rules
+  // out any client-side "save for offline" or background pre-caching for
+  // these specific files; there is no workaround without a server of our
+  // own to proxy through. This app is streaming-only for that reason.
   var BASE_URL = "https://oshoworld.com/wp-content/uploads/2020/11/Hindi%20Audio/OSHO-Maha_Geeta_";
   var TOTAL_EPISODES = 91;
 
@@ -397,80 +402,16 @@
       url: BASE_URL + p + ".mp3",
       position: 0,
       duration: 0,
-      done: false,
-      cached: false
+      done: false
     });
   }
 
   // ---------- register service worker for offline app-shell caching ----------
+  // (this only caches the app's own same-origin files — the page, icons,
+  // manifest — so it works fine even though caching the audio doesn't.)
   if("serviceWorker" in navigator){
     window.addEventListener("load", function(){
       navigator.serviceWorker.register("./sw.js").catch(function(){});
-    });
-  }
-
-  // ---------- IndexedDB: only used for episodes you explicitly cache for offline ----------
-  var DB_NAME = "mahagita-player";
-  var DB_VERSION = 2;
-  var STORE = "offline-episodes";
-  var db = null;
-
-  function openDB(){
-    return new Promise(function(resolve, reject){
-      var req = indexedDB.open(DB_NAME, DB_VERSION);
-      req.onupgradeneeded = function(e){
-        var d = e.target.result;
-        if(!d.objectStoreNames.contains(STORE)){
-          d.createObjectStore(STORE, { keyPath: "id" });
-        }
-        // drop the old v1 store that used to hold every uploaded blob
-        if(d.objectStoreNames.contains("episodes")){
-          d.deleteObjectStore("episodes");
-        }
-      };
-      req.onsuccess = function(e){ resolve(e.target.result); };
-      req.onerror = function(e){ reject(e); };
-    });
-  }
-  function idbKeys(){
-    return new Promise(function(resolve){
-      if(!db){ resolve([]); return; }
-      try{
-        var tx = db.transaction(STORE, "readonly");
-        var req = tx.objectStore(STORE).getAllKeys();
-        req.onsuccess = function(){ resolve(req.result || []); };
-        req.onerror = function(){ resolve([]); };
-      }catch(e){ resolve([]); }
-    });
-  }
-  function idbGet(id){
-    return new Promise(function(resolve, reject){
-      try{
-        var tx = db.transaction(STORE, "readonly");
-        var req = tx.objectStore(STORE).get(id);
-        req.onsuccess = function(){ resolve(req.result || null); };
-        req.onerror = function(){ reject(req.error); };
-      }catch(err){ reject(err); }
-    });
-  }
-  function idbPut(rec){
-    return new Promise(function(resolve, reject){
-      try{
-        var tx = db.transaction(STORE, "readwrite");
-        tx.objectStore(STORE).put(rec);
-        tx.oncomplete = function(){ resolve(); };
-        tx.onerror = function(){ reject(tx.error); };
-      }catch(err){ reject(err); }
-    });
-  }
-  function idbDelete(id){
-    return new Promise(function(resolve, reject){
-      try{
-        var tx = db.transaction(STORE, "readwrite");
-        tx.objectStore(STORE).delete(id);
-        tx.oncomplete = function(){ resolve(); };
-        tx.onerror = function(){ reject(tx.error); };
-      }catch(err){ reject(err); }
     });
   }
 
@@ -503,7 +444,6 @@
   // ---------- state ----------
   var byId = {};
   episodes.forEach(function(ep){ byId[ep.id] = ep; });
-  var blobUrls = {};         // id -> object URL for cached (offline) blobs
   var currentId = lsGet("mahagita:lastPlayed", null);
   // currentId is restored from storage so the UI can highlight it and offer
   // "Resume" immediately, but that alone does NOT mean the audio element has
@@ -516,7 +456,6 @@
   var rates = [1, 1.25, 1.5, 1.75, 2, 0.75];
   var rateIdx = lsGet("mahagita:rateIdx", 0);
   var saveTimer = null;
-  var downloadingIds = {};
 
   var $list = document.getElementById("list");
   var $player = document.getElementById("player");
@@ -543,16 +482,14 @@
     return m + ":" + (sec<10?"0":"") + sec;
   }
 
-  var downloadIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>';
-  var cachedIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>';
-  var spinnerIcon = '<svg class="spinning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 1-9 9"/></svg>';
-
   // shows a spinner in the big play button while an episode is loading/buffering
   function setPlayButtonState(state){
     $loadIcon.style.display = state === "loading" ? "block" : "none";
     $playIcon.style.display = state === "play" ? "block" : "none";
     $pauseIcon.style.display = state === "pause" ? "block" : "none";
   }
+
+  var spinnerSvg = '<svg class="spinning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 1-9 9"/></svg>';
 
   function render(){
     var html = "";
@@ -576,13 +513,7 @@
       } else {
         metaText = '<span>Not started</span>';
       }
-      if(ep.cached){
-        metaText += ' <span class="offline-tag">· Saved</span>';
-      }
-      var offlineBtnClass = "ep-offline" + (ep.cached ? " cached" : "");
-      var offlineIcon = downloadingIds[ep.id] ? spinnerIcon : (ep.cached ? cachedIcon : downloadIcon);
-      var offlineLabel = ep.cached ? "Remove offline copy" : "Save for offline";
-      var numContent = isLoadingRow ? spinnerIcon : (isPlaying ? '♫' : ep.num);
+      var numContent = isLoadingRow ? spinnerSvg : (isPlaying ? '♫' : ep.num);
 
       html += '<li class="ep'+(isPlaying?' playing':'')+'" data-id="'+ep.id+'">'+
         '<div class="ep-num">'+numContent+'</div>'+
@@ -590,7 +521,6 @@
           '<div class="ep-name">'+ep.name+'</div>'+
           '<div class="ep-meta">'+metaText+'</div>'+
         '</div>'+
-        '<div class="'+offlineBtnClass+'" data-offline="'+ep.id+'" aria-label="'+offlineLabel+'">'+offlineIcon+'</div>'+
       '</li>';
     }
     $list.innerHTML = html;
@@ -599,52 +529,6 @@
     $progressCount.textContent = finished + " of " + episodes.length + " finished";
     $progressPct.textContent = Math.round((finished/episodes.length)*100) + "%";
     $progressInner.style.width = (finished/episodes.length*100) + "%";
-  }
-
-  // ---------- offline caching ----------
-  function toggleOffline(id){
-    var ep = byId[id];
-    if(!ep || downloadingIds[id]) return;
-
-    if(ep.cached){
-      // remove cached copy
-      if(blobUrls[id]){ URL.revokeObjectURL(blobUrls[id]); delete blobUrls[id]; }
-      ep.cached = false;
-      idbDelete(id).catch(function(){});
-      render();
-      return;
-    }
-
-    downloadingIds[id] = true;
-    render();
-    fetch(ep.url)
-      .then(function(res){
-        if(!res.ok) throw new Error("download failed");
-        return res.blob();
-      })
-      .then(function(blob){
-        return idbPut({ id: id, blob: blob }).then(function(){ return blob; });
-      })
-      .then(function(){
-        ep.cached = true;
-        delete downloadingIds[id];
-        render();
-      })
-      .catch(function(){
-        delete downloadingIds[id];
-        render();
-      });
-  }
-
-  // ---------- playback ----------
-  function sourceFor(ep){
-    return idbGet(ep.id).then(function(rec){
-      if(rec && rec.blob){
-        if(!blobUrls[ep.id]) blobUrls[ep.id] = URL.createObjectURL(rec.blob);
-        return blobUrls[ep.id];
-      }
-      return ep.url; // stream directly, no local storage needed
-    }).catch(function(){ return ep.url; });
   }
 
   function updateMediaSession(ep){
@@ -692,59 +576,51 @@
     updateMediaSession(ep);
     render();
 
-    function attach(src){
-      if(myToken !== loadToken) return; // superseded by a newer tap elsewhere
+    if(myToken !== loadToken) return; // superseded by a newer tap elsewhere
 
-      $audio.src = src;
-      $audio.playbackRate = rates[rateIdx];
-      $rateBtn.textContent = rates[rateIdx] + "×";
+    $audio.src = ep.url;
+    $audio.playbackRate = rates[rateIdx];
+    $rateBtn.textContent = rates[rateIdx] + "×";
 
-      var resumeAt = ep.position || 0;
-      var seeked = false;
+    var resumeAt = ep.position || 0;
+    var seeked = false;
 
-      function onMeta(){
-        if(myToken !== loadToken) return;
-        audioLoaded = true;
-        loading = false;
-        $audio.removeEventListener("error", onError);
-        if(!seeked && resumeAt > 0 && resumeAt < ($audio.duration - 2 || Infinity)){
-          seeked = true;
-          $audio.currentTime = resumeAt;
-        }
-        render();
+    function onMeta(){
+      if(myToken !== loadToken) return;
+      audioLoaded = true;
+      loading = false;
+      $audio.removeEventListener("error", onError);
+      if(!seeked && resumeAt > 0 && resumeAt < ($audio.duration - 2 || Infinity)){
+        seeked = true;
+        $audio.currentTime = resumeAt;
       }
-      function onError(){
-        if(myToken !== loadToken) return;
-        audioLoaded = false;
-        loading = false;
-        $audio.removeEventListener("loadedmetadata", onMeta);
-        $time.textContent = "Couldn't load — tap to retry";
-        setPlayButtonState("play");
-        render();
-      }
-
-      $audio.addEventListener("loadedmetadata", onMeta, { once:true });
-      $audio.addEventListener("error", onError, { once:true });
-
-      // Call play() itself, not load(): with preload="none" nothing starts
-      // fetching until playback is requested, so waiting for loadedmetadata
-      // before calling play() would deadlock forever (this was the actual
-      // bug — the player looked like it remembered the position but could
-      // never start, because it was waiting on an event that never fires).
-      // Seeking to the resume position happens moments later once
-      // loadedmetadata does fire, above.
-      $audio.play().catch(function(){
-        setPlayButtonState("play");
-      });
+      render();
+    }
+    function onError(){
+      if(myToken !== loadToken) return;
+      audioLoaded = false;
+      loading = false;
+      $audio.removeEventListener("loadedmetadata", onMeta);
+      $time.textContent = "Couldn't load — tap to retry";
+      setPlayButtonState("play");
+      render();
     }
 
-    if(ep.cached){
-      sourceFor(ep).then(attach); // async IndexedDB lookup for the offline blob
-    } else {
-      attach(ep.url); // stream directly — stays synchronous with the tap so
-                       // iOS Safari's autoplay-needs-a-direct-gesture rule
-                       // isn't broken by an extra async hop
-    }
+    $audio.addEventListener("loadedmetadata", onMeta, { once:true });
+    $audio.addEventListener("error", onError, { once:true });
+
+    // Call play() itself, not load(): with preload="none" nothing starts
+    // fetching until playback is requested, so waiting for loadedmetadata
+    // before calling play() would deadlock forever (this was the actual
+    // bug — the player looked like it remembered the position but could
+    // never start, because it was waiting on an event that never fires).
+    // Seeking to the resume position happens moments later once
+    // loadedmetadata does fire, above. Calling play() synchronously here
+    // (not after an async lookup) also keeps this tied to your tap, which
+    // iOS Safari requires for autoplay to be allowed at all.
+    $audio.play().catch(function(){
+      setPlayButtonState("play");
+    });
   }
 
   var lastSaveAt = 0;
@@ -884,12 +760,6 @@
 
   // ---------- list interactions ----------
   $list.addEventListener("click", function(e){
-    var off = e.target.closest("[data-offline]");
-    if(off){
-      e.stopPropagation();
-      toggleOffline(off.getAttribute("data-offline"));
-      return;
-    }
     var li = e.target.closest("li.ep");
     if(li){
       var epId = li.getAttribute("data-id");
@@ -906,18 +776,6 @@
   }
   window.addEventListener("online", updateNetNote);
   window.addEventListener("offline", updateNetNote);
-
-  // ---------- load cached state ----------
-  openDB().then(function(d){
-    db = d;
-    return idbKeys();
-  }).then(function(keys){
-    keys.forEach(function(id){ if(byId[id]) byId[id].cached = true; });
-    render();
-  }).catch(function(err){
-    console.error("DB init failed", err);
-    render();
-  });
 
   updateNetNote();
   render();
