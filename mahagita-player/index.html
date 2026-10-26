@@ -457,6 +457,26 @@
   var rateIdx = lsGet("mahagita:rateIdx", 0);
   var saveTimer = null;
 
+  // ---------- keeping playback alive ----------
+  // Streaming from a third-party server over a phone connection means a
+  // stream can occasionally die or stall mid-episode (a dropped connection,
+  // a slow patch, the server timing out a long request). The audio element
+  // doesn't always recover on its own — it can just sit there silently while
+  // the button still says "playing" — so we notice (an error, or no progress
+  // for a while) and quietly restart the stream at the exact spot we were at,
+  // backing off a few times before giving up and asking for a tap.
+  var RETRY_DELAYS_MS = [0, 2000, 5000, 10000];
+  var STALL_TIMEOUT_MS = 15000;    // "playing" but not advancing this long = stuck
+  var LOAD_TIMEOUT_MS = 30000;     // a start that never gets going this long = stuck
+  var WATCHDOG_INTERVAL_MS = 3000;
+  var retryCount = 0;
+  var retryTimer = null;
+  var lastRetryAt = 0;
+  var waitingForOnline = false;
+  var loadStartedAt = 0;
+  var lastProgressTime = 0;
+  var lastProgressAt = Date.now();
+
   var $list = document.getElementById("list");
   var $player = document.getElementById("player");
   var $audio = document.getElementById("audio");
@@ -539,7 +559,7 @@
         artist: "Ashtavakra Mahagita",
         album: "Osho"
       });
-      navigator.mediaSession.setActionHandler("play", function(){ $audio.play().catch(function(){}); });
+      navigator.mediaSession.setActionHandler("play", resumeCurrent);
       navigator.mediaSession.setActionHandler("pause", function(){ $audio.pause(); });
       navigator.mediaSession.setActionHandler("seekbackward", function(){ $audio.currentTime = Math.max(0, $audio.currentTime - 15); });
       navigator.mediaSession.setActionHandler("seekforward", function(){ $audio.currentTime = Math.min($audio.duration || Infinity, $audio.currentTime + 30); });
@@ -556,15 +576,32 @@
     return id !== currentId || (!audioLoaded && !loading);
   }
 
-  function playEpisode(id){
+  // Play/resume whatever the current episode is (used by the lock-screen
+  // play button): reload it if the stream isn't actually loaded, otherwise
+  // just unpause.
+  function resumeCurrent(){
+    var target = byId[currentId] || episodes[0];
+    if(shouldLoad(target.id)){ playEpisode(target.id); return; }
+    if(audioLoaded && $audio.paused) $audio.play().catch(function(){});
+  }
+
+  function playEpisode(id, isRetry){
     var ep = byId[id];
     if(!ep) return;
 
     if(currentId && currentId !== id) persistPosition(true);
 
+    // a fresh tap / auto-advance cancels any pending auto-retry and starts
+    // the retry budget over; an automatic retry keeps counting
+    clearTimeout(retryTimer);
+    retryTimer = null;
+    waitingForOnline = false;
+    if(!isRetry) retryCount = 0;
+
     currentId = id;
     audioLoaded = false;
     loading = true;
+    loadStartedAt = Date.now();
     loadToken++;
     var myToken = loadToken;
 
@@ -594,16 +631,14 @@
         seeked = true;
         $audio.currentTime = resumeAt;
       }
+      setPlayButtonState($audio.paused ? "play" : "pause");
+      $time.textContent = fmtTime($audio.currentTime) + " / " + fmtTime($audio.duration);
       render();
     }
     function onError(){
       if(myToken !== loadToken) return;
-      audioLoaded = false;
-      loading = false;
       $audio.removeEventListener("loadedmetadata", onMeta);
-      $time.textContent = "Couldn't load — tap to retry";
-      setPlayButtonState("play");
-      render();
+      recoverPlayback();
     }
 
     $audio.addEventListener("loadedmetadata", onMeta, { once:true });
@@ -622,6 +657,91 @@
       setPlayButtonState("play");
     });
   }
+
+  function isBusy(){
+    return loading || retryTimer !== null || waitingForOnline;
+  }
+
+  // The stream died, stalled, or never got going: remember exactly where we
+  // were, then restart it from there (after a short, growing delay), and
+  // only give up — leaving the play button ready for a manual retry — once
+  // the retries are used up.
+  function recoverPlayback(){
+    var id = currentId;
+    var ep = id && byId[id];
+    if(!ep) return;
+
+    if(audioLoaded){
+      ep.position = $audio.currentTime > 0 ? $audio.currentTime : ep.position;
+      if($audio.duration) ep.duration = $audio.duration;
+      saveProgress(ep);
+    }
+    audioLoaded = false;
+    loading = false;
+    loadToken++; // anything still pending from the dead stream is now stale
+
+    if(retryCount >= RETRY_DELAYS_MS.length){
+      retryCount = 0;
+      $audio.pause();
+      setPlayButtonState("play");
+      $time.textContent = "Couldn't reach the stream — tap play to retry";
+      render();
+      return;
+    }
+
+    var delay = RETRY_DELAYS_MS[retryCount++];
+    setPlayButtonState("loading");
+    $time.textContent = "Reconnecting…";
+    render();
+    clearTimeout(retryTimer);
+    retryTimer = setTimeout(function(){
+      retryTimer = null;
+      if(currentId !== id) return; // you moved on to another episode
+      if(!navigator.onLine){
+        waitingForOnline = true;
+        $time.textContent = "Waiting for connection…";
+        return;
+      }
+      lastRetryAt = Date.now();
+      playEpisode(id, true);
+    }, delay);
+  }
+
+  // Errors once the stream has loaded (a dropped connection mid-episode).
+  // Errors while starting are handled inside playEpisode.
+  $audio.addEventListener("error", function(){
+    if(!audioLoaded) return;
+    if($audio.error && $audio.error.code === 1) return; // aborted on purpose (we swapped the source)
+    recoverPlayback();
+  });
+
+  // Silent failures: no error event, the stream just stops moving. Check
+  // every few seconds that "playing" actually means the position advances.
+  setInterval(function(){
+    var now = Date.now();
+
+    if(loading && now - loadStartedAt > LOAD_TIMEOUT_MS){
+      recoverPlayback();
+      return;
+    }
+
+    if(!audioLoaded || $audio.paused || $audio.ended){
+      lastProgressTime = $audio.currentTime;
+      lastProgressAt = now;
+      return;
+    }
+    if($audio.currentTime !== lastProgressTime){
+      lastProgressTime = $audio.currentTime;
+      lastProgressAt = now;
+      // steady again after a retry: restore the full retry budget
+      if(retryCount && now - lastRetryAt > 30000) retryCount = 0;
+      return;
+    }
+    if(now - lastProgressAt > STALL_TIMEOUT_MS){
+      lastProgressAt = now;
+      recoverPlayback();
+    }
+  }, WATCHDOG_INTERVAL_MS);
 
   var lastSaveAt = 0;
   var SAVE_INTERVAL_MS = 2000;
@@ -670,7 +790,9 @@
     if($audio.duration){
       $seek.max = $audio.duration;
       $seek.value = $audio.currentTime;
-      $time.textContent = fmtTime($audio.currentTime) + " / " + fmtTime($audio.duration);
+      // only while a stream is actually loaded — otherwise this would
+      // overwrite status messages like "Reconnecting…" with a stale time
+      if(audioLoaded) $time.textContent = fmtTime($audio.currentTime) + " / " + fmtTime($audio.duration);
       if("mediaSession" in navigator && navigator.mediaSession.setPositionState){
         try{
           navigator.mediaSession.setPositionState({
@@ -686,12 +808,12 @@
   });
 
   $audio.addEventListener("play", function(){
-    setPlayButtonState("pause");
+    setPlayButtonState(isBusy() ? "loading" : "pause");
     $playPause.setAttribute("aria-label","Pause");
     if("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
   });
   $audio.addEventListener("pause", function(){
-    setPlayButtonState("play");
+    setPlayButtonState(isBusy() ? "loading" : "play");
     $playPause.setAttribute("aria-label","Play");
     if("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
     persistPosition(true);
@@ -774,7 +896,14 @@
   function updateNetNote(){
     $netNote.classList.toggle("show", !navigator.onLine);
   }
-  window.addEventListener("online", updateNetNote);
+  window.addEventListener("online", function(){
+    updateNetNote();
+    // a retry was waiting for the connection to come back
+    if(waitingForOnline && currentId){
+      lastRetryAt = Date.now();
+      playEpisode(currentId, true);
+    }
+  });
   window.addEventListener("offline", updateNetNote);
 
   updateNetNote();
